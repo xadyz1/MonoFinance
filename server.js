@@ -571,6 +571,8 @@ app.all('/api/*', (req, res) => res.status(404).json({ message: 'Não encontrado
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'app.html')));
 app.use(express.static(__dirname, { index: false }));
+app.get('/login.html', (req, res) => res.redirect(301, '/login'));
+app.get('/app.html', (req, res) => res.redirect(301, '/app'));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.listen(PORT, () => console.log('SwiftFinance running on port ' + PORT));
