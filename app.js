@@ -73,6 +73,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('modal-btn-logout');
     const btnImportLocal = document.getElementById('modal-btn-import-local');
 
+    // Welcome section
+    const welcomeName = document.getElementById('welcome-name');
+    const welcomeAvatar = document.getElementById('welcome-avatar');
+    const dashboardAdSlot = document.getElementById('dashboard-ad-slot');
+    const btnChangeAvatar = document.getElementById('btn-change-avatar');
+    const avatarInput = document.getElementById('avatar-input');
+
+    // User profile
+    let currentUserName = '';
+    let currentUserAvatar = '';
+    let currentUserRole = '';
+
     // DOM Elements - Metrics
     const totalBalanceEl = document.getElementById('total-balance');
     const totalIncomeEl = document.getElementById('total-income');
@@ -469,10 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
             const settingsUsernameDisplay = document.getElementById('settings-username-display');
 
+            const settingsNameInput = document.getElementById('settings-name');
+            const settingsAvatarPreview = document.getElementById('settings-avatar-preview');
+            const settingsAvatarInput = document.getElementById('settings-avatar-input');
+            const settingsChangeAvatarBtn = document.getElementById('settings-change-avatar-btn');
+
             const openSettingsModal = () => {
-                if (settingsUsernameDisplay) {
-                    settingsUsernameDisplay.textContent = currentUser || '-';
-                }
+                if (settingsUsernameDisplay) settingsUsernameDisplay.textContent = currentUser || '-';
+                if (settingsNameInput) settingsNameInput.value = currentUserName || '';
+                if (settingsAvatarPreview) settingsAvatarPreview.src = currentUserAvatar || 'favicon.png';
                 if (settingsModal) settingsModal.classList.add('active');
             };
 
@@ -529,6 +546,64 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else { showToast(data.message || 'Erro ao alterar password', 'error'); }
                 } catch { showToast('Erro ao ligar ao servidor', 'error'); }
             });
+
+            // Save profile
+            const btnSaveProfile = document.getElementById('modal-btn-save-profile');
+            if (btnSaveProfile) btnSaveProfile.addEventListener('click', async () => {
+                const name = settingsNameInput ? settingsNameInput.value.trim() : '';
+                let avatar = currentUserAvatar;
+                if (settingsAvatarInput && settingsAvatarInput.files && settingsAvatarInput.files[0]) {
+                    try {
+                        const fd = new FormData();
+                        fd.append('file', settingsAvatarInput.files[0]);
+                        const res = await fetch(getApiUrl('api/upload-avatar'), { method: 'POST', credentials: 'same-origin', body: fd });
+                        if (res.ok) { const d = await res.json(); avatar = d.url; }
+                    } catch (e) { console.warn('Avatar upload failed', e); }
+                }
+                try {
+                    const res = await fetch(getApiUrl('api/me'), {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                        body: JSON.stringify({ name, avatar_url: avatar })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        currentUserName = data.name || currentUserName;
+                        currentUserAvatar = data.avatar_url || currentUserAvatar;
+                        updateWelcomeSection();
+                        showToast('Perfil atualizado', 'success');
+                    } else { showToast(data.message || 'Erro ao atualizar perfil', 'error'); }
+                } catch { showToast('Erro ao ligar ao servidor', 'error'); }
+            });
+
+            if (settingsChangeAvatarBtn && settingsAvatarInput) {
+                settingsChangeAvatarBtn.addEventListener('click', () => settingsAvatarInput.click());
+                settingsAvatarInput.addEventListener('change', () => {
+                    if (settingsAvatarInput.files && settingsAvatarInput.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = e => { if (settingsAvatarPreview) settingsAvatarPreview.src = e.target.result; };
+                        reader.readAsDataURL(settingsAvatarInput.files[0]);
+                    }
+                });
+            }
+
+            if (btnChangeAvatar && avatarInput) {
+                btnChangeAvatar.addEventListener('click', () => avatarInput.click());
+                avatarInput.addEventListener('change', async () => {
+                    if (!avatarInput.files || !avatarInput.files[0]) return;
+                    try {
+                        const fd = new FormData();
+                        fd.append('file', avatarInput.files[0]);
+                        const res = await fetch(getApiUrl('api/upload-avatar'), { method: 'POST', credentials: 'same-origin', body: fd });
+                        if (res.ok) {
+                            const d = await res.json();
+                            currentUserAvatar = d.url;
+                            updateWelcomeSection();
+                            if (settingsAvatarPreview) settingsAvatarPreview.src = d.url;
+                            showToast('Foto atualizada', 'success');
+                        }
+                    } catch { showToast('Erro ao enviar foto', 'error'); }
+                });
+            }
 
             // Mobile Bottom Navigation Event Listeners
             document.querySelectorAll('.mobile-nav-item').forEach(item => {
@@ -3611,6 +3686,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    async function uploadReceipt(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input || !input.files || !input.files[0]) return null;
+        const file = input.files[0];
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const res = await fetch(getApiUrl('api/upload-receipt'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ file: base64, name: file.name })
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            return data.url || null;
+        } catch (e) { console.warn('Receipt upload failed', e); return null; }
+    }
+
     const handleIncomeSubmit = async (e) => {
         e.preventDefault();
         const amount = parseFloat(document.getElementById('income-amount').value);
@@ -3618,8 +3716,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = document.getElementById('income-date').value;
         const categorySelect = document.getElementById('income-category-select');
         const explicitCategory = categorySelect && categorySelect.value !== 'auto' ? categorySelect.value : null;
+        const receiptUrl = await uploadReceipt('income-receipt');
 
-        if (await addTransaction(amount, 'income', description, date, explicitCategory)) {
+        if (await addTransaction(amount, 'income', description, date, explicitCategory, receiptUrl)) {
             formAddIncome.reset();
             const todayStr = getLocalDateString(new Date());
             document.getElementById('income-date').value = todayStr;
@@ -3637,8 +3736,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = document.getElementById('expense-date').value;
         const categorySelect = document.getElementById('expense-category-select');
         const explicitCategory = categorySelect && categorySelect.value !== 'auto' ? categorySelect.value : null;
+        const receiptUrl = await uploadReceipt('expense-receipt');
 
-        if (await addTransaction(amount, 'expense', description, date, explicitCategory)) {
+        if (await addTransaction(amount, 'expense', description, date, explicitCategory, receiptUrl)) {
             formAddExpense.reset();
             const todayStr = getLocalDateString(new Date());
             document.getElementById('expense-date').value = todayStr;
@@ -5698,6 +5798,117 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(data.message || 'Feito', res.ok ? 'success' : 'error');
             if (res.ok) { document.getElementById('admin-new-username').value = ''; document.getElementById('admin-new-password').value = ''; loadAdminUsers(); }
         } catch { showToast('Erro ao criar', 'error'); }
+    });
+
+    // Admin tabs
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.admin-tab-btn').forEach(b => { b.classList.remove('bg-[#202024]', 'text-white'); b.classList.add('text-brand-textSecondary'); });
+            btn.classList.add('bg-[#202024]', 'text-white'); btn.classList.remove('text-brand-textSecondary');
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
+            const pane = document.getElementById('admin-tab-' + tab);
+            if (pane) pane.classList.remove('hidden');
+            if (tab === 'users') loadAdminUsers();
+            if (tab === 'plans') loadAdminPlans();
+            if (tab === 'ads') loadAdminAds();
+        });
+    });
+
+    window.loadAdminPlans = async function () {
+        const listEl = document.getElementById('admin-plans-list');
+        if (!listEl) return;
+        try {
+            const res = await fetch(getApiUrl('api/admin/plans'), { credentials: 'same-origin' });
+            const data = await res.json();
+            if (!res.ok) { listEl.innerHTML = `<p class="text-xs text-red-400">${data.message}</p>`; return; }
+            listEl.innerHTML = '';
+            data.plans.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2';
+                div.innerHTML = `<div class="min-w-0"><p class="text-xs text-white font-semibold truncate">${escapeHtml(p.name)} <span class="text-brand-textSecondary font-normal">${p.price !== undefined ? p.price.toFixed(2) + ' €' : ''}</span></p><p class="text-[10px] text-brand-textSecondary truncate">${escapeHtml(p.stripe_price_id || '')}</p></div><div class="flex gap-1 flex-shrink-0"><button class="adm-edit-plan text-[9px] px-2 py-1 rounded-lg bg-[#202024] text-brand-textSecondary hover:text-white" data-id="${p.id}">Editar</button><button class="adm-del-plan text-[9px] px-2 py-1 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50" data-id="${p.id}">Eliminar</button></div>`;
+                listEl.appendChild(div);
+            });
+            listEl.querySelectorAll('.adm-edit-plan').forEach(btn => {
+                btn.onclick = async () => {
+                    const res = await fetch(getApiUrl('api/admin/plans/' + btn.dataset.id), { credentials: 'same-origin' });
+                    const p = await res.json();
+                    if (!res.ok) return;
+                    document.getElementById('admin-plan-id').value = p.id;
+                    document.getElementById('admin-plan-name').value = p.name || '';
+                    document.getElementById('admin-plan-price').value = p.price || '';
+                    document.getElementById('admin-plan-stripe-price').value = p.stripe_price_id || '';
+                    document.getElementById('admin-plan-description').value = p.description || '';
+                    document.getElementById('admin-plan-features').value = Array.isArray(p.features) ? p.features.join('\n') : '';
+                    document.getElementById('admin-plan-popular').checked = !!p.popular;
+                    document.getElementById('admin-plan-active').checked = p.active !== false;
+                    document.getElementById('admin-plan-sort').value = p.sort_order || '';
+                };
+            });
+            listEl.querySelectorAll('.adm-del-plan').forEach(btn => {
+                btn.onclick = async () => {
+                    if (!confirm('Eliminar este plano?')) return;
+                    await fetch(getApiUrl('api/admin/plans/' + btn.dataset.id), { method: 'DELETE', credentials: 'same-origin' });
+                    loadAdminPlans();
+                };
+            });
+        } catch (e) { listEl.innerHTML = '<p class="text-xs text-red-400">Erro ao carregar planos</p>'; }
+    };
+
+    const adminPlanForm = document.getElementById('admin-plan-form');
+    if (adminPlanForm) adminPlanForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = {
+            id: document.getElementById('admin-plan-id').value || undefined,
+            name: document.getElementById('admin-plan-name').value.trim(),
+            price: parseFloat(document.getElementById('admin-plan-price').value) || 0,
+            stripe_price_id: document.getElementById('admin-plan-stripe-price').value.trim(),
+            description: document.getElementById('admin-plan-description').value.trim(),
+            features: document.getElementById('admin-plan-features').value.split('\n').map(x => x.trim()).filter(Boolean),
+            popular: document.getElementById('admin-plan-popular').checked,
+            active: document.getElementById('admin-plan-active').checked,
+            sort_order: parseInt(document.getElementById('admin-plan-sort').value) || 0
+        };
+        try {
+            const res = await fetch(getApiUrl('api/admin/plans'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+            const data = await res.json();
+            showToast(data.message || 'Plano guardado', res.ok ? 'success' : 'error');
+            if (res.ok) { adminPlanForm.reset(); document.getElementById('admin-plan-id').value = ''; loadAdminPlans(); }
+        } catch { showToast('Erro ao guardar plano', 'error'); }
+    });
+
+    window.loadAdminAds = async function () {
+        const slot = document.getElementById('admin-ad-slot').value;
+        try {
+            const res = await fetch(getApiUrl('api/admin/ads/' + slot), { credentials: 'same-origin' });
+            const data = await res.json();
+            document.getElementById('admin-ad-html').value = data.html || '';
+            document.getElementById('admin-ad-active').checked = data.active !== false;
+        } catch { showToast('Erro ao carregar publicidade', 'error'); }
+    };
+
+    document.querySelectorAll('.ad-slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ad-slot-btn').forEach(b => { b.classList.remove('bg-[#202024]', 'text-white'); b.classList.add('text-brand-textSecondary'); });
+            btn.classList.add('bg-[#202024]', 'text-white'); btn.classList.remove('text-brand-textSecondary');
+            document.getElementById('admin-ad-slot').value = btn.dataset.slot;
+            loadAdminAds();
+        });
+    });
+
+    const adminAdsForm = document.getElementById('admin-ads-form');
+    if (adminAdsForm) adminAdsForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = {
+            slot_name: document.getElementById('admin-ad-slot').value,
+            html: document.getElementById('admin-ad-html').value,
+            active: document.getElementById('admin-ad-active').checked
+        };
+        try {
+            const res = await fetch(getApiUrl('api/admin/ads'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+            const data = await res.json();
+            showToast(data.message || 'Publicidade guardada', res.ok ? 'success' : 'error');
+        } catch { showToast('Erro ao guardar publicidade', 'error'); }
     });
 
     // Register Service Worker for PWA

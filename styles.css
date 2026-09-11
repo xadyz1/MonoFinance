@@ -1313,3 +1313,19 @@ html:not(.dark) .chart-guide-line {
     white-space: nowrap;
     max-width: 100%;
 }
+
+/* Logo dark/light mode */
+html.dark .logo-dark { display: none !important; }
+html.dark .logo-light { display: block !important; }
+html:not(.dark) .logo-dark { display: block !important; }
+html:not(.dark) .logo-light { display: none !important; }
+
+/* Welcome section */
+.welcome-section {
+    background: linear-gradient(135deg, rgba(32,160,52,0.15) 0%, rgba(32,160,52,0.05) 100%);
+    border: 1px solid rgba(32,160,52,0.2);
+}
+html:not(.dark) .welcome-section {
+    background: linear-gradient(135deg, rgba(32,160,52,0.08) 0%, rgba(32,160,52,0.02) 100%);
+    border: 1px solid rgba(32,160,52,0.15);
+}

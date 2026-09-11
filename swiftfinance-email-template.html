@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>{{subject}}</title>
+  <!--
+    SwiftFinance transactional email base template
+    Replace {{variables}} server-side before sending.
+    Use absolute HTTPS URLs for {{logo_url}} and {{dashboard_url}}.
+  -->
+  <style>
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    body { margin:0!important; padding:0!important; width:100%!important; background:#f4f6f5; }
+    a { color:#20a034; }
+    .container { width:100%; max-width:680px; }
+    .content { padding:44px 52px; }
+    .button:hover { background:#18862b!important; }
+    @media screen and (max-width:620px) {
+      .content { padding:32px 22px!important; }
+      .brand { padding-top:26px!important; }
+      .mobile-full { width:100%!important; }
+      .details td { display:block!important; width:100%!important; padding:5px 0!important; }
+      h1 { font-size:25px!important; line-height:32px!important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+    {{preheader}}
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f6f5;">
+    <tr>
+      <td align="center" style="padding:0 14px;">
+        <table role="presentation" class="container" width="680" cellpadding="0" cellspacing="0" border="0">
+          <!-- Header -->
+          <tr>
+            <td class="brand" align="center" style="padding:38px 0 26px;">
+              <a href="{{app_url}}" target="_blank" style="text-decoration:none;">
+                <img src="{{logo_url}}" width="150" alt="SwiftFinance" style="display:block;width:150px;max-width:100%;height:auto;margin:0 auto;">
+              </a>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #e4e9e5;border-radius:10px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="content" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#19231c;">
+                    <h1 style="margin:0 0 24px;font-size:28px;line-height:36px;font-weight:700;letter-spacing:-.4px;color:#18221b;">{{title}}</h1>
+
+                    <p style="margin:0 0 22px;font-size:15px;line-height:24px;color:#39443d;">
+                      Olá {{recipient_name}},
+                    </p>
+
+                    <p style="margin:0 0 24px;font-size:15px;line-height:24px;color:#39443d;">
+                      {{message}}
+                    </p>
+
+                    <!-- Optional details block -->
+                    <table role="presentation" class="details" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px;background:#f7f9f7;border:1px solid #edf0ed;border-radius:8px;">
+                      <tr>
+                        <td style="padding:17px 18px 4px;font-size:14px;line-height:21px;color:#5b665f;font-family:Arial,sans-serif;">
+                          <strong style="color:#26332a;">{{detail_label_1}}</strong><br>{{detail_value_1}}
+                        </td>
+                        <td style="padding:17px 18px 4px;font-size:14px;line-height:21px;color:#5b665f;font-family:Arial,sans-serif;">
+                          <strong style="color:#26332a;">{{detail_label_2}}</strong><br>{{detail_value_2}}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 18px 17px;font-size:14px;line-height:21px;color:#5b665f;font-family:Arial,sans-serif;">
+                          <strong style="color:#26332a;">{{detail_label_3}}</strong><br>{{detail_value_3}}
+                        </td>
+                        <td style="padding:8px 18px 17px;font-size:14px;line-height:21px;color:#5b665f;font-family:Arial,sans-serif;">
+                          <strong style="color:#26332a;">{{detail_label_4}}</strong><br>{{detail_value_4}}
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Primary CTA -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td class="button" style="border-radius:6px;background:#20a034;">
+                          <a href="{{action_url}}" target="_blank" style="display:inline-block;padding:13px 20px;border:1px solid #20a034;border-radius:6px;font-size:14px;font-weight:700;line-height:18px;text-decoration:none;color:#ffffff;">
+                            {{action_label}}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:28px 0 0;font-size:13px;line-height:21px;color:#707a73;">
+                      Se o botão não funcionar, copie e cole este endereço no navegador:<br>
+                      <a href="{{action_url}}" target="_blank" style="color:#20a034;word-break:break-all;">{{action_url}}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:25px 16px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+              <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#7b857d;">
+                Esta mensagem foi enviada automaticamente pelo SwiftFinance.
+              </p>
+              <p style="margin:0;font-size:12px;line-height:18px;color:#7b857d;">
+                © {{year}} SwiftFinance · <a href="{{privacy_url}}" style="color:#20a034;text-decoration:none;">Privacidade</a> · <a href="{{support_url}}" style="color:#20a034;text-decoration:none;">Ajuda</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
