@@ -255,7 +255,11 @@ app.get('/api/receipts/:transactionId', requireAuth, async (req, res) => {
 
 // Admin: Users
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,created_at');
+  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,created_at');
+  if (error) {
+    console.error('[API /api/admin/users] Supabase error:', error);
+    return res.status(500).json({ message: 'Erro ao carregar utilizadores' });
+  }
   res.json({ users: data || [] });
 });
 
@@ -403,23 +407,36 @@ app.get('/api/advertising', async (req, res) => {
 });
 
 app.get('/api/ads', async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.query.slot || 'landing').eq('active', true).single();
+  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.query.slot || 'landing').eq('active', true).single();
+  if (error && error.code !== 'PGRST116') {
+    console.error('[API /api/ads] Supabase error:', error);
+  }
   res.json(data || { html: '', active: false });
 });
 
 app.get('/api/admin/ads/:slot', requireAdmin, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.params.slot).single();
+  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.params.slot).single();
+  if (error && error.code !== 'PGRST116') {
+    console.error('[API /api/admin/ads/:slot] Supabase error:', error);
+  }
   res.json(data || { html: '', active: true });
 });
 
 app.post('/api/admin/ads', requireAdmin, async (req, res) => {
   const { slot_name, html, active } = req.body || {};
   if (!slot_name) return res.status(400).json({ message: 'Slot obrigatório' });
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('id').eq('slot_name', slot_name).single();
+  const { data: existing, error: fetchErr } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('id').eq('slot_name', slot_name).single();
+  if (fetchErr && fetchErr.code !== 'PGRST116') {
+    console.error('[API /api/admin/ads] Fetch error:', fetchErr);
+    return res.status(500).json({ message: 'Erro ao procurar slot' });
+  }
+  const upsertData = { slot_name, html_code: html, active: active !== false };
   if (existing) {
-    await supabase.schema('swiftfinance').from('swiftfinance_advertising').update({ html_code: html, active: active !== false }).eq('id', existing.id);
+    const { error } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').update(upsertData).eq('id', existing.id);
+    if (error) { console.error('[API /api/admin/ads] Update error:', error); return res.status(500).json({ message: 'Erro ao atualizar publicidade' }); }
   } else {
-    await supabase.schema('swiftfinance').from('swiftfinance_advertising').insert({ slot_name, html_code: html, active: active !== false });
+    const { error } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').insert(upsertData);
+    if (error) { console.error('[API /api/admin/ads] Insert error:', error); return res.status(500).json({ message: 'Erro ao criar publicidade' }); }
   }
   res.json({ message: 'OK' });
 });

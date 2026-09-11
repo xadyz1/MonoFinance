@@ -5779,10 +5779,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!res.ok) { listEl.innerHTML = `<p class="text-xs text-red-400">${data.message}</p>`; return; }
             listEl.innerHTML = '';
-            data.users.forEach(u => {
+            (data.users || []).forEach(u => {
+                const displayName = u.name || u.email || u.username || 'Utilizador #' + u.id;
                 const div = document.createElement('div');
                 div.className = 'flex items-center justify-between bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2';
-                div.innerHTML = '<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-brand-textSecondary">person</span><span class="text-xs text-white">' + u.username + '</span><span class="text-[9px] px-1.5 py-0.5 rounded-full ' + (u.role === 'admin' ? 'bg-brand-accentDim text-brand-accent' : 'bg-[#202024] text-brand-textSecondary') + '">' + u.role + '</span></div><div class="flex gap-1"><button class="adm-role-btn text-[9px] px-2 py-1 rounded-lg bg-[#202024] text-brand-textSecondary hover:text-white" data-id="' + u.id + '" data-role="' + u.role + '">' + (u.role === 'admin' ? 'Rebaixar' : 'Promover') + '</button><button class="adm-del-btn text-[9px] px-2 py-1 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50" data-id="' + u.id + '">Eliminar</button></div>';
+                div.innerHTML = '<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-brand-textSecondary">person</span><span class="text-xs text-white">' + displayName + '</span><span class="text-[9px] px-1.5 py-0.5 rounded-full ' + (u.role === 'admin' ? 'bg-brand-accentDim text-brand-accent' : 'bg-[#202024] text-brand-textSecondary') + '">' + (u.role || 'user') + '</span></div><div class="flex gap-1"><button class="adm-role-btn text-[9px] px-2 py-1 rounded-lg bg-[#202024] text-brand-textSecondary hover:text-white" data-id="' + u.id + '" data-role="' + u.role + '">' + (u.role === 'admin' ? 'Rebaixar' : 'Promover') + '</button><button class="adm-del-btn text-[9px] px-2 py-1 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50" data-id="' + u.id + '">Eliminar</button></div>';
                 listEl.appendChild(div);
             });
             listEl.querySelectorAll('.adm-role-btn').forEach(btn => {
