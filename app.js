@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitTransferBtn = document.getElementById('submit-transfer-btn');
 
     const GOAL_ICONS = ['savings', 'directions_car', 'flight', 'home', 'phone_iphone', 'laptop', 'shield', 'fitness_center', 'school', 'shopping_bag', 'redeem', 'star'];
-    const GOAL_COLORS = ['#2c3e50', '#10B981', '#3B82F6', '#20a034', '#F59E0B', '#EC4899', '#14B8A6'];
+    const GOAL_COLORS = ['#20a034', '#10B981', '#3B82F6', '#20a034', '#F59E0B', '#EC4899', '#14B8A6'];
 
     // 1. Initialize App
     const init = async () => {
@@ -458,9 +458,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const adminModal = document.getElementById('admin-modal');
             const btnAdmin = document.getElementById('btn-admin');
             const closeAdminModalBtn = document.getElementById('close-admin-modal');
-            if (btnAdmin) btnAdmin.addEventListener('click', () => { if(adminModal) adminModal.classList.add('active'); loadAdminUsers(); });
-            if (closeAdminModalBtn) closeAdminModalBtn.addEventListener('click', () => { if(adminModal) adminModal.classList.remove('active'); });
-            if (adminModal) adminModal.addEventListener('click', e => { if(e.target===adminModal) adminModal.classList.remove('active'); });
+            if (btnAdmin) btnAdmin.addEventListener('click', () => { if (adminModal) adminModal.classList.add('active'); loadAdminUsers(); });
+            if (closeAdminModalBtn) closeAdminModalBtn.addEventListener('click', () => { if (adminModal) adminModal.classList.remove('active'); });
+            if (adminModal) adminModal.addEventListener('click', e => { if (e.target === adminModal) adminModal.classList.remove('active'); });
 
             // Settings Modal Event Listeners
             const settingsModal = document.getElementById('settings-modal');
@@ -1113,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 title: 'Automóvel',
                 targetAmount: 200000,
                 currentAmount: 45000,
-                color: '#2c3e50',
+                color: '#20a034',
                 icon: 'directions_car'
             }
         ];
@@ -1400,8 +1400,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dayProgressEl) {
                 dayProgressEl.style.width = `${Math.min(100, dPct)}%`;
                 dayProgressEl.className = dPct > 100
-                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#2c3e50] to-[#EF4444] h-full rounded-full transition-all duration-500'
-                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#2c3e50] h-full rounded-full transition-all duration-500';
+                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#20a034] to-[#EF4444] h-full rounded-full transition-all duration-500'
+                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#20a034] h-full rounded-full transition-all duration-500';
             }
         }
 
@@ -1431,8 +1431,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (weekProgressEl) {
                 weekProgressEl.style.width = `${Math.min(100, wPct)}%`;
                 weekProgressEl.className = wPct > 100
-                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#2c3e50] to-[#EF4444] h-full rounded-full transition-all duration-500'
-                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#2c3e50] h-full rounded-full transition-all duration-500';
+                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#20a034] to-[#EF4444] h-full rounded-full transition-all duration-500'
+                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#20a034] h-full rounded-full transition-all duration-500';
             }
         }
 
@@ -1462,8 +1462,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (monthProgressEl) {
                 monthProgressEl.style.width = `${Math.min(100, mPct)}%`;
                 monthProgressEl.className = mPct > 100
-                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#2c3e50] to-[#EF4444] h-full rounded-full transition-all duration-500'
-                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#2c3e50] h-full rounded-full transition-all duration-500';
+                    ? 'progress-thumb bg-gradient-to-r from-brand-purple via-[#20a034] to-[#EF4444] h-full rounded-full transition-all duration-500'
+                    : 'progress-thumb bg-gradient-to-r from-brand-purple to-[#20a034] h-full rounded-full transition-all duration-500';
             }
         }
 
@@ -1902,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </span>
                         </div>
                         <div class="progress-track bg-[#111113] h-2 w-full rounded-full border border-[#202024] overflow-hidden">
-                            <div class="progress-thumb bg-gradient-to-r from-brand-purple to-[#2c3e50] h-full rounded-full transition-all duration-500" style="width: ${Math.min(100, pct)}%"></div>
+                            <div class="progress-thumb bg-gradient-to-r from-brand-purple to-[#20a034] h-full rounded-full transition-all duration-500" style="width: ${Math.min(100, pct)}%"></div>
                         </div>
                     `;
                     row.addEventListener('click', () => openCategoryDetailsModal(catName));
@@ -1933,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <p class="text-[10px] text-brand-textSecondary truncate">${escapeHtml(t.category || 'Despesa')} • ${t.date}</p>
                             </div>
                         </div>
-                        <span class="text-xs font-bold font-outfit text-[#2c3e50] flex-shrink-0">${formatCurrency(t.amount)}</span>
+                        <span class="text-xs font-bold font-outfit text-[#20a034] flex-shrink-0">${formatCurrency(t.amount)}</span>
                     `;
                     statsTopExpensesContainer.appendChild(item);
                 });
@@ -2468,7 +2468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `
                 <td class="py-4 px-3 text-brand-textSecondary font-medium text-xs">${formatDateString(t.date)}</td>
                 <td class="py-4 px-3 font-semibold flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-lg ${iconBgClass} border border-[#202024] flex items-center justify-center group-hover:border-[#2c3e50] transition-colors">
+                    <span class="w-8 h-8 rounded-lg ${iconBgClass} border border-[#202024] flex items-center justify-center group-hover:border-[#20a034] transition-colors">
                         <span class="material-symbols-outlined text-[16px]">${iconName}</span>
                     </span>
                     <span class="truncate max-w-[150px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
@@ -3271,10 +3271,10 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'Automático (IA e histórico)',
             shortName: 'Automático',
             icon: 'auto_awesome',
-            color: '#2c3e50',
-            bg: 'bg-[#2c3e50]/15',
-            border: 'border-[#2c3e50]/30',
-            text: 'text-[#2c3e50]',
+            color: '#20a034',
+            bg: 'bg-[#20a034]/15',
+            border: 'border-[#20a034]/30',
+            text: 'text-[#20a034]',
             desc: 'Determinação automática pela descrição da transação e o seu histórico'
         },
         {
@@ -5187,11 +5187,11 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <div class="flex-1 min-w-0">
                     <label class="block text-[9px] font-bold text-brand-textSecondary uppercase tracking-widest mb-1.5 opacity-70">Descrição / Nome</label>
-                    <input type="text" class="voice-item-desc w-full bg-[#111113] border border-[#202024] rounded-xl px-3 h-[38px] text-xs text-white focus:border-[#2c3e50] focus:outline-none transition-all" value="${escapeHtml(desc)}" placeholder="Ex: Salário ou Café">
+                    <input type="text" class="voice-item-desc w-full bg-[#111113] border border-[#202024] rounded-xl px-3 h-[38px] text-xs text-white focus:border-[#20a034] focus:outline-none transition-all" value="${escapeHtml(desc)}" placeholder="Ex: Salário ou Café">
                 </div>
                 <div class="w-full sm:w-28 flex-shrink-0">
                     <label class="block text-[9px] font-bold text-brand-textSecondary uppercase tracking-widest mb-1.5 opacity-70">Valor (€)</label>
-                    <input type="number" step="0.01" class="voice-item-amount w-full bg-[#111113] border border-[#202024] rounded-xl px-3 h-[38px] text-xs text-white focus:border-[#2c3e50] focus:outline-none transition-all" value="${amount > 0 ? amount : ''}" placeholder="0.00">
+                    <input type="number" step="0.01" class="voice-item-amount w-full bg-[#111113] border border-[#202024] rounded-xl px-3 h-[38px] text-xs text-white focus:border-[#20a034] focus:outline-none transition-all" value="${amount > 0 ? amount : ''}" placeholder="0.00">
                 </div>
                 <div class="w-full sm:w-36 flex-shrink-0">
                     <label class="block text-[9px] font-bold text-brand-textSecondary uppercase tracking-widest mb-1.5 opacity-70">Tipo de transação</label>
@@ -5200,7 +5200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button type="button" class="voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${type === 'expense' ? 'bg-[#20a034]/20 text-[#A78BFA] border border-[#20a034]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}" data-type="expense">
                             Despesa
                         </button>
-                        <button type="button" class="voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${type === 'income' ? 'bg-[#2c3e50]/20 text-[#2c3e50] border border-[#2c3e50]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}" data-type="income">
+                        <button type="button" class="voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${type === 'income' ? 'bg-[#20a034]/20 text-[#20a034] border border-[#20a034]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}" data-type="income">
                             Rendimento
                         </button>
                     </div>
@@ -5219,7 +5219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (b.dataset.type === 'expense') {
                             b.className = `voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${selectedType === 'expense' ? 'bg-[#20a034]/20 text-[#A78BFA] border border-[#20a034]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}`;
                         } else {
-                            b.className = `voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${selectedType === 'income' ? 'bg-[#2c3e50]/20 text-[#2c3e50] border border-[#2c3e50]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}`;
+                            b.className = `voice-type-btn text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex-1 text-center ${selectedType === 'income' ? 'bg-[#20a034]/20 text-[#20a034] border border-[#20a034]/40 shadow-sm' : 'text-brand-textSecondary hover:text-white'}`;
                         }
                     });
                 });
@@ -5360,8 +5360,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `w-9 h-9 rounded-xl flex items-center justify-center border transition-all flex-shrink-0 ${icon === selectedIcon
-                ? 'border-[#2c3e50] bg-[#2c3e50]/20 text-[#2c3e50]'
-                : 'border-[#202024] bg-black text-brand-textSecondary hover:border-[#2c3e50]/50'
+                ? 'border-[#20a034] bg-[#20a034]/20 text-[#20a034]'
+                : 'border-[#202024] bg-black text-brand-textSecondary hover:border-[#20a034]/50'
                 }`;
             btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">${icon}</span>`;
             btn.addEventListener('click', () => {
@@ -5372,7 +5372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const renderColorPicker = (selectedColor = '#2c3e50') => {
+    const renderColorPicker = (selectedColor = '#20a034') => {
         if (!envelopeColorPicker) return;
         envelopeColorPicker.innerHTML = '';
         GOAL_COLORS.forEach(color => {
@@ -5391,7 +5391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openEnvelopeModal = (goalId = null) => {
         renderIconPicker('savings');
-        renderColorPicker('#2c3e50');
+        renderColorPicker('#20a034');
 
         if (goalId) {
             const goal = savingsGoals.find(g => String(g.id) === String(goalId));
@@ -5402,9 +5402,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (envelopeTargetAmountInput) envelopeTargetAmountInput.value = goal.targetAmount;
                 if (envelopeCurrentAmountInput) envelopeCurrentAmountInput.value = goal.currentAmount;
                 if (envelopeIconVal) envelopeIconVal.value = goal.icon || 'savings';
-                if (envelopeColorVal) envelopeColorVal.value = goal.color || '#2c3e50';
+                if (envelopeColorVal) envelopeColorVal.value = goal.color || '#20a034';
                 renderIconPicker(goal.icon || 'savings');
-                renderColorPicker(goal.color || '#2c3e50');
+                renderColorPicker(goal.color || '#20a034');
             }
         } else {
             if (envelopeModalTitle) envelopeModalTitle.textContent = 'Criar novo envelope';
@@ -5413,7 +5413,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (envelopeTargetAmountInput) envelopeTargetAmountInput.value = '';
             if (envelopeCurrentAmountInput) envelopeCurrentAmountInput.value = '0';
             if (envelopeIconVal) envelopeIconVal.value = 'savings';
-            if (envelopeColorVal) envelopeColorVal.value = '#2c3e50';
+            if (envelopeColorVal) envelopeColorVal.value = '#20a034';
         }
 
         if (envelopeModal) envelopeModal.classList.add('active');
@@ -5430,7 +5430,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetAmount = envelopeTargetAmountInput ? parseFloat(envelopeTargetAmountInput.value) : 0;
         const currentAmount = envelopeCurrentAmountInput ? parseFloat(envelopeCurrentAmountInput.value) || 0 : 0;
         const icon = envelopeIconVal ? envelopeIconVal.value : 'savings';
-        const color = envelopeColorVal ? envelopeColorVal.value : '#2c3e50';
+        const color = envelopeColorVal ? envelopeColorVal.value : '#20a034';
 
         if (!title || targetAmount <= 0) {
             showToast('Introduza um nome e um valor alvo válidos', 'info');
@@ -5520,7 +5520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (transferTypeVal) transferTypeVal.value = type;
         if (type === 'deposit') {
             if (transferTabDeposit) {
-                transferTabDeposit.className = 'py-2 text-xs font-semibold rounded-lg bg-[#2c3e50] text-white transition-all';
+                transferTabDeposit.className = 'py-2 text-xs font-semibold rounded-lg bg-[#20a034] text-white transition-all';
                 transferTabDeposit.textContent = 'Depositar';
             }
             if (transferTabWithdraw) {
@@ -5536,7 +5536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 transferTabDeposit.textContent = 'Depositar';
             }
             if (transferTabWithdraw) {
-                transferTabWithdraw.className = 'py-2 text-xs font-semibold rounded-lg bg-[#2c3e50] text-white transition-all';
+                transferTabWithdraw.className = 'py-2 text-xs font-semibold rounded-lg bg-[#20a034] text-white transition-all';
                 transferTabWithdraw.textContent = 'Levantar';
             }
             if (transferModalTitle) transferModalTitle.textContent = 'Levantar fundos do envelope';
@@ -5699,13 +5699,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = parseFloat(goal.targetAmount) || 1;
             const current = parseFloat(goal.currentAmount) || 0;
             const pct = Math.min(Math.round((current / target) * 100), 100);
-            const color = goal.color || '#2c3e50';
+            const color = goal.color || '#20a034';
             const icon = goal.icon || 'savings';
 
             // Render main grid card
             if (grid) {
                 const card = document.createElement('div');
-                card.className = 'bg-[#161619] border border-[#202024] hover:border-[#2c3e50]/40 rounded-2xl p-4 transition-all flex flex-col justify-between group relative overflow-hidden shadow-md';
+                card.className = 'bg-[#161619] border border-[#202024] hover:border-[#20a034]/40 rounded-2xl p-4 transition-all flex flex-col justify-between group relative overflow-hidden shadow-md';
 
                 card.innerHTML = `
                     <div>
@@ -5715,7 +5715,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span class="material-symbols-outlined text-[20px]">${icon}</span>
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <h4 class="font-semibold text-xs sm:text-sm text-white group-hover:text-[#2c3e50] transition-colors line-clamp-2 break-words leading-snug" title="${escapeHtml(goal.title)}">${escapeHtml(goal.title)}</h4>
+                                    <h4 class="font-semibold text-xs sm:text-sm text-white group-hover:text-[#20a034] transition-colors line-clamp-2 break-words leading-snug" title="${escapeHtml(goal.title)}">${escapeHtml(goal.title)}</h4>
                                 </div>
                             </div>
                             
@@ -5747,7 +5747,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-[#202024]/60">
-                        <button type="button" class="btn-deposit-envelope py-1.5 bg-[#2c3e50] hover:bg-[#2c3e50]/90 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1 transition-all active:scale-95" data-id="${goal.id}">
+                        <button type="button" class="btn-deposit-envelope py-1.5 bg-[#20a034] hover:bg-[#20a034]/90 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1 transition-all active:scale-95" data-id="${goal.id}">
                             <span class="material-symbols-outlined text-[14px]">add_circle</span>
                             <span>Depositar</span>
                         </button>
@@ -5763,7 +5763,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Render dashboard mini items
             if (dbMiniList) {
                 const miniItem = document.createElement('div');
-                miniItem.className = 'flex items-center justify-between p-2 rounded-xl bg-[#161619] border border-[#202024] hover:border-[#2c3e50]/30 transition-all text-xs';
+                miniItem.className = 'flex items-center justify-between p-2 rounded-xl bg-[#161619] border border-[#202024] hover:border-[#20a034]/30 transition-all text-xs';
                 miniItem.innerHTML = `
                     <div class="flex items-center gap-2 overflow-hidden min-w-0 flex-1 pr-2">
                         <div class="envelope-icon-box w-6 h-6 rounded-lg flex items-center justify-center text-white text-[12px] flex-shrink-0" style="background-color: ${color}">
@@ -5784,7 +5784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Admin: load users list
-    window.loadAdminUsers = async function() {
+    window.loadAdminUsers = async function () {
         const listEl = document.getElementById('admin-users-list');
         if (!listEl) return;
         try {
@@ -5800,18 +5800,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             listEl.querySelectorAll('.adm-role-btn').forEach(btn => {
                 btn.onclick = async () => {
-                    await fetch(getApiUrl('api/admin/user/' + btn.dataset.id + '/role'), { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify({role: btn.dataset.role==='admin'?'user':'admin'}) });
+                    await fetch(getApiUrl('api/admin/user/' + btn.dataset.id + '/role'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ role: btn.dataset.role === 'admin' ? 'user' : 'admin' }) });
                     loadAdminUsers();
                 };
             });
             listEl.querySelectorAll('.adm-del-btn').forEach(btn => {
                 btn.onclick = async () => {
                     if (!confirm('Eliminar este utilizador?')) return;
-                    await fetch(getApiUrl('api/admin/user/' + btn.dataset.id), { method:'DELETE', credentials:'same-origin' });
+                    await fetch(getApiUrl('api/admin/user/' + btn.dataset.id), { method: 'DELETE', credentials: 'same-origin' });
                     loadAdminUsers();
                 };
             });
-        } catch(e) { listEl.innerHTML = '<p class="text-xs text-red-400">Erro ao carregar</p>'; }
+        } catch (e) { listEl.innerHTML = '<p class="text-xs text-red-400">Erro ao carregar</p>'; }
     };
 
     // Admin: create user form
@@ -5822,10 +5822,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('admin-new-password').value;
         if (!username || !password) return;
         try {
-            const res = await fetch(getApiUrl('api/admin/user'), { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify({username, password}) });
+            const res = await fetch(getApiUrl('api/admin/user'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ username, password }) });
             const data = await res.json();
             showToast(data.message || 'Feito', res.ok ? 'success' : 'error');
-            if (res.ok) { document.getElementById('admin-new-username').value=''; document.getElementById('admin-new-password').value=''; loadAdminUsers(); }
+            if (res.ok) { document.getElementById('admin-new-username').value = ''; document.getElementById('admin-new-password').value = ''; loadAdminUsers(); }
         } catch { showToast('Erro ao criar', 'error'); }
     });
 

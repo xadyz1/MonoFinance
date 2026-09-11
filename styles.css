@@ -165,7 +165,7 @@ body {
 }
 
 .nav-item.active {
-    color: #2c3e50;
+    color: #20a034;
     /* Orange-Red accent from Metric Flow */
     background-color: #2E1B18;
     /* Accent Dim background */
@@ -174,7 +174,7 @@ body {
 }
 
 .nav-item.active span.material-symbols-outlined {
-    color: #2c3e50;
+    color: #20a034;
     font-variation-settings: 'FILL' 1;
 }
 
@@ -246,7 +246,7 @@ body {
 }
 
 .filter-tab.active[data-filter="income"] {
-    color: #2c3e50;
+    color: #20a034;
 }
 
 .filter-tab.active[data-filter="expense"] {
@@ -305,7 +305,7 @@ svg line {
 }
 
 .chart-point.income-point {
-    stroke: #2c3e50;
+    stroke: #20a034;
     /* Orange-Red income stroke */
 }
 
@@ -440,11 +440,11 @@ svg line {
 }
 
 .toast.toast-success {
-    border-left: 3px solid #2c3e50;
+    border-left: 3px solid #20a034;
 }
 
 .toast.toast-success span.material-symbols-outlined {
-    color: #2c3e50;
+    color: #20a034;
 }
 
 .toast.toast-recurring {
@@ -547,11 +547,11 @@ html:not(.dark) .nav-item:hover span.material-symbols-outlined {
 
 html:not(.dark) .nav-item.active {
     background-color: #FFEFEA !important;
-    color: #2c3e50 !important;
+    color: #20a034 !important;
 }
 
 html:not(.dark) .nav-item.active span.material-symbols-outlined {
-    color: #2c3e50 !important;
+    color: #20a034 !important;
 }
 
 html:not(.dark) input {
@@ -561,8 +561,8 @@ html:not(.dark) input {
 }
 
 html:not(.dark) input:focus {
-    border-color: #2c3e50 !important;
-    --tw-ring-color: #2c3e50 !important;
+    border-color: #20a034 !important;
+    --tw-ring-color: #20a034 !important;
 }
 
 html:not(.dark) .bg-\[\#161619\],
@@ -596,16 +596,16 @@ html:not(.dark) .chart-point {
 }
 
 html:not(.dark) .chart-point.income-point {
-    stroke: #2c3e50 !important;
+    stroke: #20a034 !important;
 }
 
 html:not(.dark) .chart-point.expense-point {
     stroke: #20a034 !important;
 }
 
-html:not(.dark) #finance-chart path[stroke="#2c3e50"],
-html:not(.dark) #dashboard-mini-chart path[stroke="#2c3e50"] {
-    stroke: #2c3e50 !important;
+html:not(.dark) #finance-chart path[stroke="#20a034"],
+html:not(.dark) #dashboard-mini-chart path[stroke="#20a034"] {
+    stroke: #20a034 !important;
 }
 
 html:not(.dark) #finance-chart path[stroke="#20a034"],
@@ -624,7 +624,7 @@ html:not(.dark) .bg-black {
 html:not(.dark) .bg-brand-accentDim,
 html:not(.dark) .envelope-badge-chip {
     background-color: #FFEFEA !important;
-    color: #2c3e50 !important;
+    color: #20a034 !important;
     border-color: rgba(255, 90, 54, 0.3) !important;
 }
 
@@ -637,7 +637,7 @@ html:not(.dark) .bg-\[\#2E1619\] {
 }
 
 html:not(.dark) .btn-deposit-envelope {
-    background-color: #2c3e50 !important;
+    background-color: #20a034 !important;
     color: #ffffff !important;
 }
 
@@ -725,12 +725,12 @@ input[type="number"] {
 }
 
 .mobile-nav-item.active {
-    color: #2c3e50;
+    color: #20a034;
     font-weight: 600;
 }
 
 .mobile-nav-item.active span.material-symbols-outlined {
-    color: #2c3e50;
+    color: #20a034;
     font-variation-settings: 'FILL' 1;
 }
 
@@ -755,11 +755,11 @@ html:not(.dark) .mobile-nav-item:hover {
 
 html:not(.dark) .mobile-nav-item.active {
     background-color: transparent !important;
-    color: #2c3e50 !important;
+    color: #20a034 !important;
 }
 
 html:not(.dark) .mobile-nav-item.active span.material-symbols-outlined {
-    color: #2c3e50 !important;
+    color: #20a034 !important;
 }
 
 /* Mobile responsive fixes for iPhone 13 & POCO X6 (under 640px) */
@@ -796,8 +796,8 @@ html:not(.dark) button.bg-brand-accent,
 html:not(.dark) button.bg-brand-accent *,
 html:not(.dark) button.bg-brand-purple,
 html:not(.dark) button.bg-brand-purple *,
-html:not(.dark) button.bg-\[\#2c3e50\],
-html:not(.dark) button.bg-\[\#2c3e50\] *,
+html:not(.dark) button.bg-\[\#20a034\],
+html:not(.dark) button.bg-\[\#20a034\] *,
 html:not(.dark) button[type="submit"]:not(#daily-limit-cancel-btn),
 html:not(.dark) button[type="submit"]:not(#daily-limit-cancel-btn) *,
 html:not(.dark) #auth-submit-btn,
@@ -1011,7 +1011,7 @@ html:not(.dark) .expense-cat-card.active-cat {
 }
 
 .income-cat-card.active-cat {
-    border-color: #2c3e50 !important;
+    border-color: #20a034 !important;
     background-color: rgba(255, 90, 54, 0.14) !important;
     box-shadow: 0 0 0 1px rgba(255, 90, 54, 0.4);
 }
@@ -1028,7 +1028,7 @@ html:not(.dark) .income-cat-card:hover {
 
 html:not(.dark) .income-cat-card.active-cat {
     background-color: #FFF0EB !important;
-    border-color: #2c3e50 !important;
+    border-color: #20a034 !important;
     box-shadow: 0 0 0 1px rgba(255, 90, 54, 0.4) !important;
 }
 
@@ -1091,7 +1091,7 @@ html:not(.dark) .income-cat-card.active-cat {
 
 .amount-suggest-chip.income-chip:hover,
 .amount-suggest-chip.income-chip.active-chip {
-    border-color: #2c3e50;
+    border-color: #20a034;
     background-color: rgba(255, 90, 54, 0.16);
     color: #FFCCBC;
     box-shadow: 0 0 0 1px rgba(255, 90, 54, 0.35);
@@ -1128,7 +1128,7 @@ html:not(.dark) .amount-suggest-chip.expense-chip.active-chip {
 html:not(.dark) .amount-suggest-chip.income-chip:hover,
 html:not(.dark) .amount-suggest-chip.income-chip.active-chip {
     background-color: #FFF0EB !important;
-    border-color: #2c3e50 !important;
+    border-color: #20a034 !important;
     color: #C2410C !important;
     box-shadow: 0 0 0 1px rgba(255, 90, 54, 0.4) !important;
 }
@@ -1208,7 +1208,7 @@ html:not(.dark) .amount-suggest-badge {
 }
 
 .chart-popup-dot.income {
-    background-color: #2c3e50;
+    background-color: #20a034;
     box-shadow: 0 0 6px rgba(255, 90, 54, 0.7);
 }
 

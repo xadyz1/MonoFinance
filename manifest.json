@@ -2,7 +2,7 @@
   "name": "SwiftFinance",
   "short_name": "SwiftFinance",
   "description": "Персональний фінансовий дешборд з голосовим введенням витрат",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#0A0A0C",
   "theme_color": "#0A0A0C",

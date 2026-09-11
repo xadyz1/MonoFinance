@@ -15,7 +15,7 @@
       --line: #202024;
       --text: #fff;
       --muted: #8E8E93;
-      --accent: #2c3e50;
+      --accent: #20a034;
       --purple: #20a034
     }
 
@@ -130,7 +130,6 @@
       font-size: 12.5px;
       text-decoration: none
     }
-
   </style>
 </head>
 
@@ -176,7 +175,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          window.location.href = '/index.html';
+          window.location.href = '/app.html';
           return;
         }
         errBox.textContent = 'Nome de utilizador ou contrasinal incorrectos.';

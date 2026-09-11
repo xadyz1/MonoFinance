@@ -220,11 +220,15 @@ def add_no_cache_headers(response):
 # Serve static files
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'swiftfinance-landing-page.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/login')
 def serve_login():
     return send_from_directory('.', 'login.html')
+
+@app.route('/app.html')
+def serve_app():
+    return send_from_directory('.', 'app.html')
 
 @app.route('/styles.css')
 def serve_css():
@@ -250,7 +254,7 @@ def serve_sw():
 def serve_static(filename):
     if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)):
         return send_from_directory('.', filename)
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('.', 'app.html')
 
 
 def get_request_data():

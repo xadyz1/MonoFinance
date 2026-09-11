@@ -26,7 +26,7 @@
 
 ---
 
-SwiftFinance is a modern, privacy-first personal finance tracking platform engineered for high performance, intuitive data visualization, and seamless cross-device synchronization. Built with a dark charcoal aesthetic and vibrant orange-red accents (`#2c3e50`) inspired by the Metric Flow design language, SwiftFinance combines comprehensive cashflow monitoring, target-based savings envelopes, dynamic budget limits, and AI-driven expense categorization with voice dictation support across web, iOS PWA, and native Android clients.
+SwiftFinance is a modern, privacy-first personal finance tracking platform engineered for high performance, intuitive data visualization, and seamless cross-device synchronization. Built with a dark charcoal aesthetic and vibrant orange-red accents (`#20a034`) inspired by the Metric Flow design language, SwiftFinance combines comprehensive cashflow monitoring, target-based savings envelopes, dynamic budget limits, and AI-driven expense categorization with voice dictation support across web, iOS PWA, and native Android clients.
 
 ---
 
@@ -57,7 +57,7 @@ Managing personal finances often suffers from cluttered interfaces, rigid third-
 
 ## Design Philosophy
 
-- **Metric Flow Aesthetic**: High-contrast, dark charcoal background (`#121212` / `#0A0A0A`) with an energetic orange-red brand accent (`#2c3e50`), purple utility accents (`#20a034`), and clear typography.
+- **Metric Flow Aesthetic**: High-contrast, dark charcoal background (`#121212` / `#0A0A0A`) with an energetic orange-red brand accent (`#20a034`), purple utility accents (`#20a034`), and clear typography.
 - **Zero Distractions**: Essential data is prioritized. Unnecessary headers, promotional banners, and complex nested menus are eliminated in favor of clean cards, sliding pills, and responsive widgets.
 - **Adaptive Ergonomics**: Tailored layouts for both large desktop monitors and mobile touchscreens (smartphones such as iPhone 13 and POCO X6), featuring gesture-friendly controls, bottom sheets, and swipeable carousels.
 - **Strictly No Emojis**: Minimalist, professional iconography using clean vector SVG glyphs and Google Material Symbols.
@@ -282,7 +282,7 @@ Below is the complete development history and major milestones compiled from pro
 
 - **2026-07-15: Project Initialization and Metric Flow Design**
   - Designed core single-page application structure.
-  - Implemented the Metric Flow charcoal/orange visual palette (`#2c3e50`).
+  - Implemented the Metric Flow charcoal/orange visual palette (`#20a034`).
   - Integrated 30-day SVG line trend graphs with responsive vector scaling.
   - Added real-time financial health insight cards and dynamic metrics calculation.
   - Complete Ukrainian localization across all interface components.

@@ -2,7 +2,7 @@
 const CACHE_NAME = 'swiftfinance-pwa-v78';
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
+  './app.html',
   './styles.css?v=113',
   './app.js?v=133',
   './manifest.json',
