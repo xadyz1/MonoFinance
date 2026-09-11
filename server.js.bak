@@ -38,13 +38,13 @@ const requireAuth = (req, res, next) => {
 
 const requireAdmin = async (req, res, next) => {
   if (!req.session.userId) return res.status(401).json({ message: 'Não autenticado' });
-  const { data: u } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('role').eq('id', req.session.userId).single();
+  const { data: u } = await supabase.from('swiftfinance_users').select('role').eq('id', req.session.userId).single();
   if (!u || u.role !== 'admin') return res.status(403).json({ message: 'Sem permissão' });
   next();
 };
 
 async function getUserData(userId) {
-  const { data: row } = await supabase.schema('swiftfinance').from('swiftfinance_user_data').select('*').eq('user_id', userId).single();
+  const { data: row } = await supabase.from('swiftfinance_user_data').select('*').eq('user_id', userId).single();
   if (!row) {
     const defaults = {
       user_id: userId,
@@ -57,7 +57,7 @@ async function getUserData(userId) {
       monthly_expense_limit: 30000,
       expense_limit_period: 'day'
     };
-    await supabase.schema('swiftfinance').from('swiftfinance_user_data').insert(defaults);
+    await supabase.from('swiftfinance_user_data').insert(defaults);
     return defaults;
   }
   return row;
@@ -124,9 +124,9 @@ function buildEmailTemplate(title, message, details, actionUrl, actionLabel, rec
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ message: 'Obrigatório' });
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id').ilike('email', username).single();
+  const { data: existing } = await supabase.from('swiftfinance_users').select('id').ilike('email', username).single();
   if (existing) return res.status(409).json({ message: 'Já existe' });
-  const { data: user, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').insert({
+  const { data: user, error } = await supabase.from('swiftfinance_users').insert({
     email: username.toLowerCase(),
     password_hash: bcrypt.hashSync(password, 10),
     role: 'user',
@@ -141,7 +141,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ message: 'Obrigatório' });
-  const { data: u, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('*').ilike('email', username).single();
+  const { data: u, error } = await supabase.from('swiftfinance_users').select('*').ilike('email', username).single();
   if (!u || !bcrypt.compareSync(password, u.password_hash)) {
     return res.status(401).json({ message: 'Dados incorrectos', debug: { userFound: !!u, hasHash: u ? !!u.password_hash : false, error: error?.message || null } });
   }
@@ -153,22 +153,22 @@ app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ messag
 
 app.get('/api/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ message: 'Não autenticado' });
-  const { data: u } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('email,role,name,avatar_url,plan_id').eq('id', req.session.userId).single();
+  const { data: u } = await supabase.from('swiftfinance_users').select('email,role,name,avatar_url,plan_id').eq('id', req.session.userId).single();
   res.json({ username: req.session.username, role: u?.role || 'user', name: u?.name || '', avatar_url: u?.avatar_url || '', plan_id: u?.plan_id || null });
 });
 
 app.post('/api/change-password', requireAuth, async (req, res) => {
   const { old_password, new_password } = req.body || {};
   if (!old_password || !new_password || new_password.length < 4) return res.status(400).json({ message: 'Dados inválidos' });
-  const { data: u } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('password_hash').eq('id', req.session.userId).single();
+  const { data: u } = await supabase.from('swiftfinance_users').select('password_hash').eq('id', req.session.userId).single();
   if (!u || !bcrypt.compareSync(old_password, u.password_hash)) return res.status(401).json({ message: 'Password incorreta' });
-  await supabase.schema('swiftfinance').from('swiftfinance_users').update({ password_hash: bcrypt.hashSync(new_password, 10) }).eq('id', req.session.userId);
+  await supabase.from('swiftfinance_users').update({ password_hash: bcrypt.hashSync(new_password, 10) }).eq('id', req.session.userId);
   res.json({ message: 'OK' });
 });
 
 app.post('/api/profile', requireAuth, async (req, res) => {
   const { name, avatar_url } = req.body || {};
-  await supabase.schema('swiftfinance').from('swiftfinance_users').update({ name, avatar_url }).eq('id', req.session.userId);
+  await supabase.from('swiftfinance_users').update({ name, avatar_url }).eq('id', req.session.userId);
   res.json({ message: 'OK' });
 });
 
@@ -199,9 +199,9 @@ app.post('/api/data', requireAuth, async (req, res) => {
     monthly_expense_limit: b.monthlyExpenseLimit || 30000,
     expense_limit_period: b.expenseLimitPeriod || 'day'
   };
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_user_data').select('user_id').eq('user_id', req.session.userId).single();
-  if (existing) await supabase.schema('swiftfinance').from('swiftfinance_user_data').update(payload).eq('user_id', req.session.userId);
-  else await supabase.schema('swiftfinance').from('swiftfinance_user_data').insert({ user_id: req.session.userId, ...payload });
+  const { data: existing } = await supabase.from('swiftfinance_user_data').select('user_id').eq('user_id', req.session.userId).single();
+  if (existing) await supabase.from('swiftfinance_user_data').update(payload).eq('user_id', req.session.userId);
+  else await supabase.from('swiftfinance_user_data').insert({ user_id: req.session.userId, ...payload });
   res.json({ message: 'OK' });
 });
 
@@ -218,28 +218,28 @@ app.post('/api/upload-receipt', requireAuth, async (req, res) => {
     const r = await fetch(url, { method: 'PUT', headers: { AccessKey: process.env.BUNNY_API_KEY, 'Content-Type': 'application/octet-stream' }, body: buffer });
     if (!r.ok) throw new Error('Bunny upload failed');
     const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE}/${safeName}` : url;
-    const { data: rec } = await supabase.schema('swiftfinance').from('swiftfinance_receipts').insert({ user_id: req.session.userId, file_url: publicUrl, file_name: name }).select().single();
+    const { data: rec } = await supabase.from('swiftfinance_receipts').insert({ user_id: req.session.userId, file_url: publicUrl, file_name: name }).select().single();
     res.json({ url: publicUrl, id: rec.id });
   } catch (e) { res.status(500).json({ message: 'Erro ao enviar ficheiro' }); }
 });
 
 app.get('/api/receipts/:transactionId', requireAuth, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_receipts').select('*').eq('user_id', req.session.userId).eq('transaction_id', req.params.transactionId);
+  const { data } = await supabase.from('swiftfinance_receipts').select('*').eq('user_id', req.session.userId).eq('transaction_id', req.params.transactionId);
   res.json(data || []);
 });
 
 // Admin: Users
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,created_at');
+  const { data } = await supabase.from('swiftfinance_users').select('id,email,role,name,plan_id,created_at');
   res.json({ users: data || [] });
 });
 
 app.post('/api/admin/user', requireAdmin, async (req, res) => {
   const { username, password, role } = req.body || {};
   if (!username || !password) return res.status(400).json({ message: 'Obrigatório' });
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id').ilike('email', username).single();
+  const { data: existing } = await supabase.from('swiftfinance_users').select('id').ilike('email', username).single();
   if (existing) return res.status(409).json({ message: 'Já existe' });
-  const { data: user } = await supabase.schema('swiftfinance').from('swiftfinance_users').insert({
+  const { data: user } = await supabase.from('swiftfinance_users').insert({
     email: username.toLowerCase(),
     password_hash: bcrypt.hashSync(password, 10),
     role: role || 'user',
@@ -252,27 +252,27 @@ app.post('/api/admin/user', requireAdmin, async (req, res) => {
 app.delete('/api/admin/user/:id', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id);
   if (id === req.session.userId) return res.status(400).json({ message: 'Não pode eliminar a si mesmo' });
-  await supabase.schema('swiftfinance').from('swiftfinance_users').delete().eq('id', id);
+  await supabase.from('swiftfinance_users').delete().eq('id', id);
   res.json({ message: 'OK' });
 });
 
 app.put('/api/admin/user/:id/role', requireAdmin, async (req, res) => {
   const { role } = req.body || {};
   if (!['admin', 'user'].includes(role)) return res.status(400).json({ message: 'Inválido' });
-  await supabase.schema('swiftfinance').from('swiftfinance_users').update({ role }).eq('id', parseInt(req.params.id));
+  await supabase.from('swiftfinance_users').update({ role }).eq('id', parseInt(req.params.id));
   res.json({ message: 'OK' });
 });
 
 // Plans
 app.get('/api/plans', async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').order('sort_order', { ascending: true });
+  const { data } = await supabase.from('swiftfinance_plans').select('*').order('sort_order', { ascending: true });
   res.json({ plans: data || [] });
 });
 
 app.post('/api/admin/plans', requireAdmin, async (req, res) => {
   const b = req.body || {};
   if (!b.name || !b.stripe_price_id) return res.status(400).json({ message: 'Nome e Stripe Price ID obrigatórios' });
-  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_plans').insert({
+  const { data, error } = await supabase.from('swiftfinance_plans').insert({
     name: b.name,
     description: b.description || '',
     price: b.price || 0,
@@ -289,7 +289,7 @@ app.post('/api/admin/plans', requireAdmin, async (req, res) => {
 
 app.put('/api/admin/plans/:id', requireAdmin, async (req, res) => {
   const b = req.body || {};
-  const { error } = await supabase.schema('swiftfinance').from('swiftfinance_plans').update({
+  const { error } = await supabase.from('swiftfinance_plans').update({
     name: b.name,
     description: b.description,
     price: b.price,
@@ -305,12 +305,12 @@ app.put('/api/admin/plans/:id', requireAdmin, async (req, res) => {
 });
 
 app.delete('/api/admin/plans/:id', requireAdmin, async (req, res) => {
-  await supabase.schema('swiftfinance').from('swiftfinance_plans').delete().eq('id', req.params.id);
+  await supabase.from('swiftfinance_plans').delete().eq('id', req.params.id);
   res.json({ message: 'OK' });
 });
 
 app.get('/api/admin/plans/:id', requireAdmin, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').eq('id', req.params.id).single();
+  const { data } = await supabase.from('swiftfinance_plans').select('*').eq('id', req.params.id).single();
   if (!data) return res.status(404).json({ message: 'Não encontrado' });
   res.json(data);
 });
@@ -319,7 +319,7 @@ app.get('/api/admin/plans/:id', requireAdmin, async (req, res) => {
 app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
   if (!stripe) return res.status(500).json({ message: 'Stripe não configurado' });
   const { priceId } = req.body || {};
-  const { data: plan } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').eq('stripe_price_id', priceId).single();
+  const { data: plan } = await supabase.from('swiftfinance_plans').select('*').eq('stripe_price_id', priceId).single();
   if (!plan) return res.status(404).json({ message: 'Plano não encontrado' });
   try {
     const session = await stripe.checkout.sessions.create({
@@ -335,7 +335,7 @@ app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
 });
 
 app.get('/api/subscription', requireAuth, async (req, res) => {
-  const { data: sub } = await supabase.schema('swiftfinance').from('swiftfinance_subscriptions')
+  const { data: sub } = await supabase.from('swiftfinance_subscriptions')
     .select('*, swiftfinance_plans(*)').eq('user_id', req.session.userId).order('created_at', { ascending: false }).limit(1).single();
   res.json({ subscription: sub || null });
 });
@@ -352,49 +352,49 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     const userId = parseInt(s.client_reference_id || s.metadata?.userId);
     const planId = parseInt(s.metadata?.planId);
     if (userId && planId) {
-      await supabase.schema('swiftfinance').from('swiftfinance_subscriptions').insert({
+      await supabase.from('swiftfinance_subscriptions').insert({
         user_id: userId,
         plan_id: planId,
         stripe_subscription_id: s.subscription,
         status: 'active',
         current_period_end: new Date(Date.now() + 30*24*60*60*1000).toISOString()
       });
-      await supabase.schema('swiftfinance').from('swiftfinance_users').update({ plan_id: planId }).eq('id', userId);
+      await supabase.from('swiftfinance_users').update({ plan_id: planId }).eq('id', userId);
     }
   }
   if (event.type === 'invoice.payment_failed') {
     const s = event.data.object;
-    await supabase.schema('swiftfinance').from('swiftfinance_subscriptions').update({ status: 'past_due' }).eq('stripe_subscription_id', s.subscription);
+    await supabase.from('swiftfinance_subscriptions').update({ status: 'past_due' }).eq('stripe_subscription_id', s.subscription);
   }
   res.json({ received: true });
 });
 
 // Admin: Advertising
 app.get('/api/advertising', async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*');
+  const { data } = await supabase.from('swiftfinance_advertising').select('*');
   const out = {};
   (data || []).forEach(a => out[a.slot_name] = a);
   res.json(out);
 });
 
 app.get('/api/ads', async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.query.slot || 'landing').eq('active', true).single();
+  const { data } = await supabase.from('swiftfinance_advertising').select('*').eq('slot_name', req.query.slot || 'landing').eq('active', true).single();
   res.json(data || { html: '', active: false });
 });
 
 app.get('/api/admin/ads/:slot', requireAdmin, async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('*').eq('slot_name', req.params.slot).single();
+  const { data } = await supabase.from('swiftfinance_advertising').select('*').eq('slot_name', req.params.slot).single();
   res.json(data || { html: '', active: true });
 });
 
 app.post('/api/admin/ads', requireAdmin, async (req, res) => {
   const { slot_name, html, active } = req.body || {};
   if (!slot_name) return res.status(400).json({ message: 'Slot obrigatório' });
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').select('id').eq('slot_name', slot_name).single();
+  const { data: existing } = await supabase.from('swiftfinance_advertising').select('id').eq('slot_name', slot_name).single();
   if (existing) {
-    await supabase.schema('swiftfinance').from('swiftfinance_advertising').update({ html_code: html, active: active !== false }).eq('id', existing.id);
+    await supabase.from('swiftfinance_advertising').update({ html_code: html, active: active !== false }).eq('id', existing.id);
   } else {
-    await supabase.schema('swiftfinance').from('swiftfinance_advertising').insert({ slot_name, html_code: html, active: active !== false });
+    await supabase.from('swiftfinance_advertising').insert({ slot_name, html_code: html, active: active !== false });
   }
   res.json({ message: 'OK' });
 });
@@ -448,7 +448,7 @@ app.post('/api/voice-transcribe', requireAuth, async (req, res) => {
 const UK_MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 async function checkLimitsAndNotify() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.from('swiftfinance_users').select('id,email,name');
   for (const u of users || []) {
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
@@ -467,7 +467,7 @@ async function checkLimitsAndNotify() {
 }
 
 async function sendDailySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.from('swiftfinance_users').select('id,email,name');
   for (const u of users || []) {
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
@@ -481,7 +481,7 @@ async function sendDailySummary() {
 }
 
 async function sendWeeklySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.from('swiftfinance_users').select('id,email,name');
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
   for (const u of users || []) {
@@ -499,7 +499,7 @@ async function sendWeeklySummary() {
 }
 
 async function sendMonthlySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.from('swiftfinance_users').select('id,email,name');
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   for (const u of users || []) {
@@ -524,27 +524,27 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 async function seedInitialData() {
-  const { data: admin } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id').ilike('email', 'ivandro.work@gmail.com').single();
+  const { data: admin } = await supabase.from('swiftfinance_users').select('id').ilike('email', 'ivandro.work@gmail.com').single();
   if (!admin) {
-    await supabase.schema('swiftfinance').from('swiftfinance_users').insert({
+    await supabase.from('swiftfinance_users').insert({
       email: 'ivandro.work@gmail.com',
       password_hash: bcrypt.hashSync('admin123', 10),
       role: 'admin',
       name: 'Ivandro'
     });
   }
-  const { data: eva } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id').ilike('email', 'eva.cruz.work@gmail.com').single();
+  const { data: eva } = await supabase.from('swiftfinance_users').select('id').ilike('email', 'eva.cruz.work@gmail.com').single();
   if (!eva) {
-    await supabase.schema('swiftfinance').from('swiftfinance_users').insert({
+    await supabase.from('swiftfinance_users').insert({
       email: 'eva.cruz.work@gmail.com',
       password_hash: bcrypt.hashSync('eva2026', 10),
       role: 'user',
       name: 'Eva'
     });
   }
-  const { data: plans } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('id');
+  const { data: plans } = await supabase.from('swiftfinance_plans').select('id');
   if (!plans || plans.length === 0) {
-    await supabase.schema('swiftfinance').from('swiftfinance_plans').insert([
+    await supabase.from('swiftfinance_plans').insert([
       { name: 'Simple', description: 'O essencial para começar a controlar as suas finanças.', price: 0, stripe_price_id: 'price_free', price_id: 'price_free', features: ['Contas e despesas ilimitadas','Categorias personalizadas','Resumo financeiro mensal','Acesso web e mobile'], popular: false, sort_order: 1, active: true },
       { name: 'Advance', description: 'Mais detalhe, automação e inteligência para crescer.', price: 4.99, stripe_price_id: 'price_advance', price_id: 'price_advance', features: ['Tudo do plano Simple','Metas e orçamentos avançados','Insights e relatórios inteligentes','Exportação e sincronização'], popular: true, sort_order: 2, active: true }
     ]);
