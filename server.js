@@ -168,7 +168,12 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
 
 app.post('/api/profile', requireAuth, async (req, res) => {
   const { name, avatar_url } = req.body || {};
-  await supabase.schema('swiftfinance').from('swiftfinance_users').update({ name, avatar_url }).eq('id', req.session.userId);
+  console.log('[API /api/profile] userId:', req.session.userId, 'name:', name, 'avatar_url:', avatar_url);
+  const { error } = await supabase.schema('swiftfinance').from('swiftfinance_users').update({ name, avatar_url }).eq('id', req.session.userId);
+  if (error) {
+    console.error('[API /api/profile] Supabase error:', error);
+    return res.status(500).json({ message: 'Erro ao atualizar perfil' });
+  }
   res.json({ message: 'OK', name: name || '', avatar_url: avatar_url || '' });
 });
 
@@ -224,17 +229,23 @@ app.post('/api/upload-receipt', requireAuth, async (req, res) => {
 });
 
 app.post('/api/upload-avatar', requireAuth, upload.single('file'), async (req, res) => {
+  console.log('[API /api/upload-avatar] userId:', req.session.userId, 'file:', req.file ? req.file.originalname : 'none');
   if (!req.file || !process.env.BUNNY_STORAGE_ENDPOINT || !process.env.BUNNY_API_KEY) {
+    console.error('[API /api/upload-avatar] Missing file or Bunny config');
     return res.status(400).json({ message: 'Ficheiro ou configuração em falta' });
   }
   const safeName = Date.now() + '_avatar_' + req.file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
   const url = `${process.env.BUNNY_STORAGE_ENDPOINT}/${safeName}`;
   try {
     const r = await fetch(url, { method: 'PUT', headers: { AccessKey: process.env.BUNNY_API_KEY, 'Content-Type': req.file.mimetype || 'application/octet-stream' }, body: req.file.buffer });
-    if (!r.ok) throw new Error('Bunny upload failed');
+    console.log('[API /api/upload-avatar] Bunny response status:', r.status);
+    if (!r.ok) throw new Error('Bunny upload failed: ' + r.status);
     const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE}/${safeName}` : url;
     res.json({ url: publicUrl });
-  } catch (e) { res.status(500).json({ message: 'Erro ao enviar avatar' }); }
+  } catch (e) {
+    console.error('[API /api/upload-avatar] Error:', e);
+    res.status(500).json({ message: 'Erro ao enviar avatar' });
+  }
 });
 
 app.get('/api/receipts/:transactionId', requireAuth, async (req, res) => {
