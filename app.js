@@ -1353,18 +1353,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const isMobile = window.innerWidth < 640;
         if (isMobile) {
             if (val >= 100000) {
-                return `${(val / 1000).toFixed(0)}k ₴`;
+                return `${(val / 1000).toFixed(0)}k €`;
             } else if (val >= 10000) {
                 const kVal = val / 1000;
-                return `${kVal.toFixed(val % 1000 >= 100 ? 1 : 0)}k ₴`;
+                return `${kVal.toFixed(val % 1000 >= 100 ? 1 : 0)}k €`;
             } else {
-                return `${Math.round(val)} ₴`;
+                return `${Math.round(val)} €`;
             }
         } else {
             if (val >= 1000000) {
-                return `${(val / 1000000).toFixed(1)}M ₴`;
+                return `${(val / 1000000).toFixed(1)}M €`;
             }
-            return `${Math.round(val).toLocaleString('uk-UA')} ₴`;
+            return `${Math.round(val).toLocaleString('pt-PT')} €`;
         }
     }
 
@@ -1581,14 +1581,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const histActiveDays = Math.max(1, histDaysSet.size);
         let histDailyBurnRate = histTotalExpenses > 0 ? (histTotalExpenses / histActiveDays) : 0;
         if (histDailyBurnRate <= 0) {
-            histDailyBurnRate = avgDailyExpense > 0 ? avgDailyExpense : (monthlyExpenseLimit / 30);
+            histDailyBurnRate = avgDailyExpense > 0 ? avgDailyExpense : 0;
         }
 
-        // Dynamic weighted forecast:
-        // Weight factor w = elapsedDays / totalDays.
-        // Forecast = Actual Current Spent + (Remaining Days * [(1 - w) * Historical Daily + w * Current Daily])
+        // Dynamic weighted forecast
+        // If no transactions at all, forecast should be 0
+        const hasAnyData = totalExpensesInCurrentMonth > 0 || histTotalExpenses > 0;
         let forecastExpenses = totalExpensesInCurrentMonth;
-        if (remainingDays > 0) {
+        if (remainingDays > 0 && hasAnyData) {
             const weightCurrent = elapsedDays / totalDays;
             const weightHist = 1 - weightCurrent;
             const weightedDailyRate = (weightHist * histDailyBurnRate) + (weightCurrent * avgDailyExpense);
@@ -1950,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const dayExpenses = transactions.filter(t => t.type === 'expense' && t.date === dateStr);
 
                         // Format date nicely in Ukrainian
-                        const formattedDateStr = dateObj.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+                        const formattedDateStr = dateObj.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
                         if (dailyModalDate) dailyModalDate.textContent = formattedDateStr;
 
                         if (dailyModalList) {
@@ -2510,8 +2510,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dateObj = new Date(dateStr + 'T00:00:00');
         const dayNum = dateObj.getDate();
-        const monthName = dateObj.toLocaleDateString('uk-UA', { month: 'long' });
-        const weekday = dateObj.toLocaleDateString('uk-UA', { weekday: 'short' });
+        const monthName = dateObj.toLocaleDateString('pt-PT', { month: 'long' });
+        const weekday = dateObj.toLocaleDateString('pt-PT', { weekday: 'short' });
         const formattedDate = `${dayNum} ${monthName}, ${weekday}`;
 
         popup.innerHTML = `
@@ -2724,8 +2724,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let dayPoints = [];
             if (showInteractive && pointsGroup) {
-                const pInc = createChartPoint(pointsGroup, x, yIncome, 'income-point', `${aggregates[d].income.toFixed(2)} ₴`);
-                const pExp = createChartPoint(pointsGroup, x, yExpense, 'expense-point', `${aggregates[d].expense.toFixed(2)} ₴`);
+                const pInc = createChartPoint(pointsGroup, x, yIncome, 'income-point', `${aggregates[d].income.toFixed(2)} €`);
+                const pExp = createChartPoint(pointsGroup, x, yExpense, 'expense-point', `${aggregates[d].expense.toFixed(2)} €`);
                 dayPoints.push(pInc, pExp);
             }
 
@@ -2753,7 +2753,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (datesLabels) {
                 if (idx % 6 === 0 || idx === dates.length - 1) {
                     const dateObj = new Date(d);
-                    const labelStr = dateObj.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }).replace('.', '');
+                    const labelStr = dateObj.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' }).replace('.', '');
                     const span = document.createElement('span');
                     span.className = 'chart-date-label';
                     span.textContent = labelStr;
@@ -4472,7 +4472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Utility Functions
     const formatCurrency = (val) => {
-        return new Intl.NumberFormat('uk-UA', {
+        return new Intl.NumberFormat('pt-PT', {
             style: 'currency',
             currency: 'EUR',
             minimumFractionDigits: 2,
@@ -4976,7 +4976,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     recognition = new SpeechRecognition();
-                    recognition.lang = 'uk-UA';
+                    recognition.lang = 'pt-PT';
                     recognition.continuous = false;
                     recognition.interimResults = true;
 

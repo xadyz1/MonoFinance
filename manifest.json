@@ -1,7 +1,7 @@
 {
   "name": "SwiftFinance",
   "short_name": "SwiftFinance",
-  "description": "Персональний фінансовий дешборд з голосовим введенням витрат",
+  "description": "Gestão financeira pessoal com voz e inteligência artificial",
   "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#0A0A0C",
@@ -9,19 +9,19 @@
   "orientation": "portrait",
   "icons": [
     {
+      "src": "swiftfinancepwa.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "swiftfinancepwa.png",
+      "src": "swiftfavicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
