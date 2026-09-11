@@ -963,12 +963,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
     }
 
-    // Sync state changes to server or LocalStorage
+    // Sync state changes to server
     async function syncData() {
         saveToLocalStorage();
-        if (isDemoMode) {
-            return;
-        }
 
         try {
             await fetch(getApiUrl('api/data'), {
