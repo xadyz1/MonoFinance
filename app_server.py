@@ -336,7 +336,31 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('username', None)
-    return jsonify({'message': 'Sesión pechada correctamente'})
+    return jsonify({'message': 'Sessão terminada'})
+
+@app.route('/api/change-password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    data = request.get_json() or {}
+    old_password = data.get('old_password') or ''
+    new_password = data.get('new_password') or ''
+    if not old_password or not new_password:
+        return jsonify({'message': 'Passwords obrigatórias'}), 400
+    if len(new_password) < 4:
+        return jsonify({'message': 'Nova password deve ter pelo menos 4 caracteres'}), 400
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash FROM users WHERE id = ?", (session['user_id'],))
+    row = cursor.fetchone()
+    if not row or not check_password_hash(row['password_hash'], old_password):
+        conn.close()
+        return jsonify({'message': 'Password atual incorreta'}), 401
+    new_hash = generate_password_hash(new_password)
+    cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, session['user_id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Password alterada com sucesso'})
 
 @app.route('/api/me', methods=['GET'])
 def me():

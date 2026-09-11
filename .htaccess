@@ -1,0 +1,19 @@
+# SwiftFinance - Apache Rewrite Rules
+# Redirects /login to /login.html, /app to /app.html, etc.
+RewriteEngine On
+
+# If the request is not for an existing file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# /login -> login.html
+RewriteRule ^login$ login.html [L]
+
+# /app -> app.html
+RewriteRule ^app$ app.html [L]
+
+# /dashboard -> app.html (alias)
+RewriteRule ^dashboard$ app.html [L]
+
+# Any other non-file, non-directory -> index.html (SPA catch-all)
+# RewriteRule ^(.*)$ index.html [L]

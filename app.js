@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const openSettingsModal = () => {
                 if (settingsUsernameDisplay) {
-                    settingsUsernameDisplay.textContent = isDemoMode ? 'Demo (Local)' : currentUser;
+                    settingsUsernameDisplay.textContent = currentUser || '-';
                 }
                 if (settingsModal) settingsModal.classList.add('active');
             };
@@ -490,6 +490,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+
+            // Export Data
+            const btnExport = document.getElementById('modal-btn-export-data');
+            if (btnExport) btnExport.addEventListener('click', async () => {
+                try {
+                    const res = await fetch(getApiUrl('api/data'), { credentials: 'same-origin' });
+                    if (!res.ok) throw new Error('Fetch failed');
+                    const data = await res.json();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'swiftfinance_export_' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Dados exportados com sucesso', 'success');
+                } catch { showToast('Erro ao exportar dados', 'error'); }
+            });
+
+            // Change Password
+            const btnChangePassword = document.getElementById('modal-btn-change-password');
+            if (btnChangePassword) btnChangePassword.addEventListener('click', async () => {
+                const oldPw = document.getElementById('settings-old-password').value;
+                const newPw = document.getElementById('settings-new-password').value;
+                if (!oldPw || !newPw) { showToast('Preencha ambas as passwords', 'info'); return; }
+                if (newPw.length < 4) { showToast('A nova password deve ter pelo menos 4 caracteres', 'info'); return; }
+                try {
+                    const res = await fetch(getApiUrl('api/change-password'), {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                        body: JSON.stringify({ old_password: oldPw, new_password: newPw })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Password alterada com sucesso', 'success');
+                        document.getElementById('settings-old-password').value = '';
+                        document.getElementById('settings-new-password').value = '';
+                    } else { showToast(data.message || 'Erro ao alterar password', 'error'); }
+                } catch { showToast('Erro ao ligar ao servidor', 'error'); }
+            });
 
             // Mobile Bottom Navigation Event Listeners
             document.querySelectorAll('.mobile-nav-item').forEach(item => {
@@ -705,15 +744,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startDemoMode() {
-        isDemoMode = true;
-        currentUser = null;
-
-        if (authContainer) authContainer.classList.add('hidden');
-        if (appContainer) appContainer.classList.remove('hidden');
-
-        if (userInfoSection) userInfoSection.classList.remove('hidden');
-        if (currentUsernameDisplay) currentUsernameDisplay.textContent = 'Demo (Local)';
-        if (btnImportLocal) btnImportLocal.classList.add('hidden'); // Hide import in demo
+        // Demo mode removed - redirect to login
+        window.location.href = '/';
+    }
         if (btnLogout) {
             btnLogout.classList.remove('hidden');
             const textSpan = btnLogout.querySelector('span:not(.material-symbols-outlined)');
@@ -727,22 +760,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleLogout() {
-        if (isDemoMode) {
-            isDemoMode = false;
-            showToast('Sesión pechada', 'info');
-            showAuthScreen();
-            return;
-        }
-
         try {
-            const response = await fetch(getApiUrl('api/logout'), { method: 'POST', credentials: 'same-origin' });
-            if (response.ok) {
-                showToast('Sesión pechada', 'info');
-                showAuthScreen();
-            }
-        } catch (e) {
-            showToast('Erro ao pechar sesión', 'delete');
-        }
+            await fetch(getApiUrl('api/logout'), { method: 'POST', credentials: 'same-origin' });
+        } catch (e) {}
+        showToast('Sessão terminada', 'info');
+        window.location.href = '/';
     }
 
     function saveToLocalStorage() {
@@ -898,8 +920,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedTransactions = localStorage.getItem('mono_transactions');
         if (savedTransactions) {
             transactions = JSON.parse(savedTransactions);
-        } else if (isDemoMode) {
-            seedSampleData();
         } else {
             transactions = [];
         }
