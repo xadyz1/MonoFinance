@@ -141,8 +141,10 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ message: 'Obrigatório' });
-  const { data: u } = await supabase.from('swiftfinance_users').select('*').ilike('email', username).single();
-  if (!u || !bcrypt.compareSync(password, u.password_hash)) return res.status(401).json({ message: 'Dados incorrectos' });
+  const { data: u, error } = await supabase.from('swiftfinance_users').select('*').ilike('email', username).single();
+  if (!u || !bcrypt.compareSync(password, u.password_hash)) {
+    return res.status(401).json({ message: 'Dados incorrectos', debug: { userFound: !!u, hasHash: u ? !!u.password_hash : false, error: error?.message || null } });
+  }
   req.session.userId = u.id; req.session.username = u.email;
   res.json({ message: 'OK', username: u.email, role: u.role });
 });
