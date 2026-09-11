@@ -12,6 +12,8 @@ const cron = require('node-cron');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+const upload = require('multer')({ storage: require('multer').memoryStorage() });
+
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const stripe = process.env.STRIPE_SECRET_KEY ? Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const transporter = process.env.SMTP_HOST ? nodemailer.createTransport({
@@ -167,7 +169,7 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
 app.post('/api/profile', requireAuth, async (req, res) => {
   const { name, avatar_url } = req.body || {};
   await supabase.schema('swiftfinance').from('swiftfinance_users').update({ name, avatar_url }).eq('id', req.session.userId);
-  res.json({ message: 'OK' });
+  res.json({ message: 'OK', name: name || '', avatar_url: avatar_url || '' });
 });
 
 // Data
@@ -219,6 +221,20 @@ app.post('/api/upload-receipt', requireAuth, async (req, res) => {
     const { data: rec } = await supabase.schema('swiftfinance').from('swiftfinance_receipts').insert({ user_id: req.session.userId, file_url: publicUrl, file_name: name }).select().single();
     res.json({ url: publicUrl, id: rec.id });
   } catch (e) { res.status(500).json({ message: 'Erro ao enviar ficheiro' }); }
+});
+
+app.post('/api/upload-avatar', requireAuth, upload.single('file'), async (req, res) => {
+  if (!req.file || !process.env.BUNNY_STORAGE_ENDPOINT || !process.env.BUNNY_API_KEY) {
+    return res.status(400).json({ message: 'Ficheiro ou configuração em falta' });
+  }
+  const safeName = Date.now() + '_avatar_' + req.file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const url = `${process.env.BUNNY_STORAGE_ENDPOINT}/${safeName}`;
+  try {
+    const r = await fetch(url, { method: 'PUT', headers: { AccessKey: process.env.BUNNY_API_KEY, 'Content-Type': req.file.mimetype || 'application/octet-stream' }, body: req.file.buffer });
+    if (!r.ok) throw new Error('Bunny upload failed');
+    const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE}/${safeName}` : url;
+    res.json({ url: publicUrl });
+  } catch (e) { res.status(500).json({ message: 'Erro ao enviar avatar' }); }
 });
 
 app.get('/api/receipts/:transactionId', requireAuth, async (req, res) => {
