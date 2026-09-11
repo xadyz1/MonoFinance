@@ -705,8 +705,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function getApiUrl(endpoint) {
         const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
         let basePath = window.location.pathname;
+        // Clean URLs at root: /app and /login should use root-level API
+        if (basePath === '/app' || basePath === '/login' || basePath === '/app/' || basePath === '/login/') {
+            basePath = '/';
+        }
         // If pathname ends with a file (e.g. index.html), strip the filename
-        if (basePath.includes('.')) {
+        else if (basePath.includes('.')) {
             basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
         }
         if (!basePath.endsWith('/')) {
