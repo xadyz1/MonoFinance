@@ -1,5 +1,5 @@
 // SwiftFinance PWA Service Worker
-const CACHE_NAME = 'swiftfinance-pwa-v78';
+const CACHE_NAME = 'swiftfinance-pwa-v79';
 const ASSETS_TO_CACHE = [
   './',
   './app.html',
@@ -38,6 +38,13 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Message Event (skip waiting)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Fetch Event (Network First, fallback to cache)

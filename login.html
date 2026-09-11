@@ -140,10 +140,25 @@
       await OneSignal.init({
         appId: "efc839fd-7a7f-4f79-af11-47177322e61b",
         safari_web_id: "web.onesignal.auto.02091d44-51df-4a38-967b-45e7d1e7feaf",
+        allowLocalhostAsSecureOrigin: window.location.hostname === 'localhost',
+        serviceWorkerParam: { scope: '/' },
+        serviceWorkerPath: 'OneSignalSDKWorker.js',
         notifyButton: {
           enable: true,
         },
       });
+      // Hide the OneSignal notify button after the user subscribes
+      try {
+        const state = await OneSignal.User.PushSubscription.getStateAsync && OneSignal.User.PushSubscription.getStateAsync();
+        if (state && state.isSubscribed) {
+          OneSignal.Notifications.setSetting('allowNotifyButton', false);
+        }
+        OneSignal.Notifications.addEventListener('subscriptionChange', (event) => {
+          if (event && event.current) {
+            OneSignal.Notifications.setSetting('allowNotifyButton', false);
+          }
+        });
+      } catch (e) { console.warn('OneSignal notify button config failed', e); }
     });
   </script>
 
@@ -153,7 +168,7 @@
   <div class="card">
     <div class="brand"><img src="swiftlight.png" alt="SwiftFinance"></div>
     <h1 id="title">Entrar</h1>
-    <p class="sub" id="subtitle">Aceda ao seu panel SwiftFinance</p>
+    <p class="sub" id="subtitle">Aceda ao seu painel SwiftFinance</p>
 
     <form id="auth-form" novalidate>
       <div class="field">
@@ -161,14 +176,14 @@
         <input id="username" type="text" autocomplete="username" required>
       </div>
       <div class="field">
-        <label for="password">Contrasinal</label>
+        <label for="password">Password</label>
         <input id="password" type="password" autocomplete="current-password" required>
       </div>
       <div class="error" id="error"></div>
       <button type="submit" id="submit">Entrar</button>
     </form>
 
-    <div class="back"><a href="/">← Volver á páxina principal</a></div>
+    <div class="back"><a href="/">← Voltar à página principal</a></div>
   </div>
 
   <script>
@@ -194,10 +209,10 @@
           window.location.href = '/app.html';
           return;
         }
-        errBox.textContent = 'Nome de utilizador ou contrasinal incorrectos.';
+        errBox.textContent = 'Nome de utilizador ou password incorretos.';
         errBox.style.display = 'block';
       } catch (err) {
-        errBox.textContent = 'Non se puido conectar co servidor. Tenteo de novo.';
+        errBox.textContent = 'Não foi possível ligar ao servidor. Tente novamente.';
         errBox.style.display = 'block';
       } finally {
         btn.disabled = false;

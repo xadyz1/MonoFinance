@@ -59,10 +59,25 @@
             await OneSignal.init({
                 appId: "efc839fd-7a7f-4f79-af11-47177322e61b",
                 safari_web_id: "web.onesignal.auto.02091d44-51df-4a38-967b-45e7d1e7feaf",
+                allowLocalhostAsSecureOrigin: window.location.hostname === 'localhost',
+                serviceWorkerParam: { scope: '/' },
+                serviceWorkerPath: 'OneSignalSDKWorker.js',
                 notifyButton: {
                     enable: true,
                 },
             });
+            // Hide the OneSignal notify button after the user subscribes
+            try {
+                const state = await OneSignal.User.PushSubscription.getStateAsync && OneSignal.User.PushSubscription.getStateAsync();
+                if (state && state.isSubscribed) {
+                    OneSignal.Notifications.setSetting('allowNotifyButton', false);
+                }
+                OneSignal.Notifications.addEventListener('subscriptionChange', (event) => {
+                    if (event && event.current) {
+                        OneSignal.Notifications.setSetting('allowNotifyButton', false);
+                    }
+                });
+            } catch (e) { console.warn('OneSignal notify button config failed', e); }
         });
     </script>
 
@@ -1223,8 +1238,8 @@
 
             <div class="space-y-1 text-center">
                 <h2 id="auth-title" class="text-xl font-bold text-white">Entrar</h2>
-                <p id="auth-subtitle" class="text-xs text-brand-textSecondary">Introduza os seus datos de acceso para
-                    abrir o panel</p>
+                <p id="auth-subtitle" class="text-xs text-brand-textSecondary">Introduza os seus dados de acesso para
+                    abrir o painel</p>
             </div>
 
             <form id="auth-form" class="space-y-4">
@@ -1238,7 +1253,7 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <label for="auth-password"
-                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Contrasinal</label>
+                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Password</label>
                     <input type="password" id="auth-password"
                         class="bg-black border border-[#202024] rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-xs"
                         required autocomplete="current-password">
@@ -1384,11 +1399,11 @@
             <div id="voice-parsed-container" class="space-y-4 hidden">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-brand-accent uppercase tracking-wider">Reconhecido
-                        deаписи:</span>
+                        de áudio:</span>
                     <button id="add-voice-item-btn" type="button"
                         class="px-3 py-1.5 bg-[#161619] border border-[#20a034]/40 hover:border-[#20a034] text-[#20a034] hover:bg-[#20a034]/10 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 active:scale-95">
                         <span class="material-symbols-outlined text-[15px]">add</span>
-                        <span>Adicionar ще</span>
+                        <span>Adicionar mais</span>
                     </button>
 
                 </div>

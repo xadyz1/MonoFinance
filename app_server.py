@@ -278,7 +278,7 @@ def register():
     password = str(data.get('password', ''))
     
     if not username or not password:
-        return jsonify({'message': 'O nome de utilizador e a contrasinal son obrigatorios'}), 400
+        return jsonify({'message': 'O nome de utilizador e a password são obrigatórios'}), 400
         
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -286,7 +286,7 @@ def register():
     cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,))
     if cursor.fetchone():
         conn.close()
-        return jsonify({'message': 'Xa existe un utilizador con ese nome'}), 400
+        return jsonify({'message': 'Já existe um utilizador com esse nome'}), 400
 
     try:
         p_hash = generate_password_hash(password)
@@ -303,9 +303,9 @@ def register():
         session.permanent = True
         session['user_id'] = user_id
         session['username'] = username
-        return jsonify({'message': 'Rexistro realizado con éxito', 'username': username}), 201
+        return jsonify({'message': 'Registo realizado com sucesso', 'username': username}), 201
     except sqlite3.IntegrityError:
-        return jsonify({'message': 'Xa existe un utilizador con ese nome'}), 400
+        return jsonify({'message': 'Já existe um utilizador com esse nome'}), 400
     finally:
         conn.close()
 
@@ -316,7 +316,7 @@ def login():
     password = str(data.get('password', ''))
     
     if not username or not password:
-        return jsonify({'message': 'O nome de utilizador e a contrasinal son obrigatorios'}), 400
+        return jsonify({'message': 'O nome de utilizador e a password são obrigatórios'}), 400
         
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -328,9 +328,9 @@ def login():
         session.permanent = True
         session['user_id'] = user['id']
         session['username'] = user['username']
-        return jsonify({'message': 'Sesión iniciada correctamente', 'username': user['username']})
+        return jsonify({'message': 'Sessão iniciada com sucesso', 'username': user['username']})
         
-    return jsonify({'message': 'Nome de utilizador ou contrasinal incorrectos'}), 401
+    return jsonify({'message': 'Nome de utilizador ou password incorretos'}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -468,7 +468,7 @@ def admin_update_role(target_id):
 @app.route('/api/data', methods=['GET'])
 def get_user_data():
     if 'user_id' not in session:
-        return jsonify({'message': 'Non autenticado'}), 401
+        return jsonify({'message': 'Não autenticado'}), 401
         
     process_all_recurring_expenses()
 
@@ -559,7 +559,7 @@ def get_user_data():
 @app.route('/api/data', methods=['POST'])
 def save_user_data():
     if 'user_id' not in session:
-        return jsonify({'message': 'Non autenticado'}), 401
+        return jsonify({'message': 'Não autenticado'}), 401
         
     data = get_request_data()
     transactions = data.get('transactions', [])

@@ -51,6 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#039;');
     };
 
+    const receiptIconHtml = (url) => {
+        if (!url) return '';
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="ml-1.5 text-brand-accent hover:text-white transition-colors" title="Ver recibo"><span class="material-symbols-outlined text-[14px]">receipt</span></a>`;
+    };
+
     // Auth and Sync state variables
     let isDemoMode = false;
     let isRegisterMode = false;
@@ -552,27 +557,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnSaveProfile) btnSaveProfile.addEventListener('click', async () => {
                 const name = settingsNameInput ? settingsNameInput.value.trim() : '';
                 let avatar = currentUserAvatar;
+                console.log('[Profile Save] Starting. name:', name, 'current avatar:', avatar);
                 if (settingsAvatarInput && settingsAvatarInput.files && settingsAvatarInput.files[0]) {
                     try {
                         const fd = new FormData();
                         fd.append('file', settingsAvatarInput.files[0]);
+                        console.log('[Profile Save] Uploading avatar...');
                         const res = await fetch(getApiUrl('api/upload-avatar'), { method: 'POST', credentials: 'same-origin', body: fd });
-                        if (res.ok) { const d = await res.json(); avatar = d.url; }
-                    } catch (e) { console.warn('Avatar upload failed', e); }
+                        console.log('[Profile Save] Avatar upload response:', res.status);
+                        if (res.ok) { const d = await res.json(); avatar = d.url; console.log('[Profile Save] Avatar url:', avatar); }
+                        else { const err = await res.text(); console.warn('[Profile Save] Avatar upload failed:', err); showToast('Erro ao enviar foto', 'error'); return; }
+                    } catch (e) { console.warn('Avatar upload failed', e); showToast('Erro ao enviar foto', 'error'); return; }
                 }
                 try {
+                    console.log('[Profile Save] Sending profile update:', { name, avatar_url: avatar });
                     const res = await fetch(getApiUrl('api/profile'), {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
                         body: JSON.stringify({ name, avatar_url: avatar })
                     });
                     const data = await res.json();
+                    console.log('[Profile Save] Profile update response:', res.status, data);
                     if (res.ok) {
                         currentUserName = data.name || currentUserName;
                         currentUserAvatar = data.avatar_url || currentUserAvatar;
                         updateWelcomeSection();
                         showToast('Perfil atualizado', 'success');
                     } else { showToast(data.message || 'Erro ao atualizar perfil', 'error'); }
-                } catch { showToast('Erro ao ligar ao servidor', 'error'); }
+                } catch (e) { console.error('[Profile Save] Network error:', e); showToast('Erro ao ligar ao servidor', 'error'); }
             });
 
             if (settingsChangeAvatarBtn && settingsAvatarInput) {
@@ -777,15 +788,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleAuthMode() {
         isRegisterMode = !isRegisterMode;
         if (isRegisterMode) {
-            if (authTitle) authTitle.textContent = 'Rexistrarse';
-            if (authSubtitle) authSubtitle.textContent = 'Cree unha conta nova para sincronizar os seus datos';
-            if (authSubmitBtn) authSubmitBtn.textContent = 'Rexistrarse';
-            if (authToggleModeBtn) authToggleModeBtn.textContent = 'Xa ten contas? Entrar';
+            if (authTitle) authTitle.textContent = 'Registar-se';
+            if (authSubtitle) authSubtitle.textContent = 'Crie uma conta nova para sincronizar os seus dados';
+            if (authSubmitBtn) authSubmitBtn.textContent = 'Registar-se';
+            if (authToggleModeBtn) authToggleModeBtn.textContent = 'Já tem conta? Entrar';
         } else {
             if (authTitle) authTitle.textContent = 'Entrar';
-            if (authSubtitle) authSubtitle.textContent = 'Introduza os seus datos de acceso para abrir o panel';
+            if (authSubtitle) authSubtitle.textContent = 'Introduza os seus dados de acesso para abrir o painel';
             if (authSubmitBtn) authSubmitBtn.textContent = 'Entrar';
-            if (authToggleModeBtn) authToggleModeBtn.textContent = 'Non ten contas? Rexistrarse';
+            if (authToggleModeBtn) authToggleModeBtn.textContent = 'Não tem conta? Registar-se';
         }
     }
 
@@ -811,10 +822,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (authPasswordInput) authPasswordInput.value = '';
                 await checkAuth();
             } else {
-                showToast(result.message || 'Erro de acceso', 'delete');
+                showToast(result.message || 'Erro de acesso', 'delete');
             }
         } catch (err) {
-            showToast('Non se puido conectar co servidor', 'delete');
+            showToast('Não foi possível ligar ao servidor', 'delete');
         }
     }
 
@@ -2417,7 +2428,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="w-8 h-8 rounded-lg ${iconBgClass} border border-[#202024] flex items-center justify-center group-hover:border-[#20a034] transition-colors">
                         <span class="material-symbols-outlined text-[16px]">${iconName}</span>
                     </span>
-                    <span class="truncate max-w-[150px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
+                    <span class="truncate max-w-[150px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</span>
                 </td>
                 <td class="py-4 px-3 text-brand-textSecondary font-semibold text-xs hidden sm:table-cell">${badgeLabel}</td>
                 <td class="py-4 px-3 text-xs hidden sm:table-cell">
@@ -2452,7 +2463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="material-symbols-outlined text-[18px]">${iconName}</span>
                         </span>
                         <div class="min-w-0">
-                            <p class="font-semibold text-sm text-white truncate max-w-[160px]">${escapeHtml(t.description)}</p>
+                            <p class="font-semibold text-sm text-white truncate max-w-[160px] flex items-center">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</p>
                             <p class="text-[10px] text-brand-textSecondary font-medium mt-0.5">${formatDateString(t.date)}</p>
                         </div>
                     </div>
@@ -3648,7 +3659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 3. Form and Event Handlers
-    const addTransaction = async (amount, type, description, date, explicitCategory = null) => {
+    const addTransaction = async (amount, type, description, date, explicitCategory = null, receiptUrl = null) => {
         if (!amount || isNaN(amount) || amount <= 0) return false;
         if (!description) return false;
         if (!date) return false;
@@ -3663,7 +3674,8 @@ document.addEventListener('DOMContentLoaded', () => {
             type,
             description,
             category,
-            date
+            date,
+            receipt_url: receiptUrl || null
         };
 
         transactions.unshift(newTx);
@@ -4106,7 +4118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="w-7 h-7 rounded-lg bg-brand-purpleDim text-brand-purple border border-[#202024] flex items-center justify-center flex-shrink-0">
                         <span class="material-symbols-outlined text-[15px]">${iconName}</span>
                     </span>
-                    <span class="truncate max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
+                    <span class="truncate max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</span>
                 </td>
                 <td class="py-3 px-3 text-brand-textSecondary font-semibold text-xs hidden sm:table-cell">${t.category || getCategoryName(t.description, t.type)}</td>
                 <td class="py-3 px-3 text-xs hidden sm:table-cell">
@@ -4143,7 +4155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="material-symbols-outlined text-[17px]">${iconName}</span>
                         </span>
                         <div class="min-w-0">
-                            <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</p>
+                            <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</p>
                             <p class="text-[10px] text-brand-textSecondary font-medium mt-0.5">${formatDateString(t.date)} • ${t.category || getCategoryName(t.description, t.type)}</p>
                         </div>
                     </div>
@@ -4243,7 +4255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="w-7 h-7 rounded-lg bg-brand-accentDim text-brand-accent border border-[#202024] flex items-center justify-center flex-shrink-0">
                         <span class="material-symbols-outlined text-[15px]">${iconName}</span>
                     </span>
-                    <span class="truncate max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
+                    <span class="truncate max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</span>
                 </td>
                 <td class="py-3 px-3 text-brand-textSecondary font-semibold text-xs hidden sm:table-cell">${t.category || getCategoryName(t.description, t.type)}</td>
                 <td class="py-3 px-3 text-xs hidden sm:table-cell">
@@ -4278,7 +4290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="material-symbols-outlined text-[17px]">${iconName}</span>
                         </span>
                         <div class="min-w-0">
-                            <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</p>
+                            <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</p>
                             <p class="text-[10px] text-brand-textSecondary font-medium mt-0.5">${formatDateString(t.date)} • ${t.category || getCategoryName(t.description, t.type)}</p>
                         </div>
                     </div>
@@ -4427,7 +4439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="w-7 h-7 rounded-lg bg-brand-purpleDim text-brand-purple border border-[#202024] flex items-center justify-center flex-shrink-0">
                                 <span class="material-symbols-outlined text-[15px]">${iconName}</span>
                             </span>
-                            <span class="truncate max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
+                            <span class="truncate max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</span>
                         </td>
                         <td class="py-3 px-3 text-xs hidden sm:table-cell">
                             <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#202024] text-[9px] uppercase tracking-widest font-semibold text-white">
@@ -4470,7 +4482,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="material-symbols-outlined text-[17px]">${iconName}</span>
                             </span>
                             <div class="min-w-0">
-                                <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px]" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</p>
+                                <p class="font-semibold text-xs text-white truncate max-w-[130px] sm:max-w-[200px] flex items-center" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}${receiptIconHtml(t.receipt_url)}</p>
                                 <p class="text-[10px] text-brand-textSecondary font-medium mt-0.5">${formatDateString(t.date)}</p>
                             </div>
                         </div>
@@ -5916,15 +5928,31 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').then(reg => {
                 reg.update();
+
+                // Auto-refresh only once when a new service worker is waiting and user confirms (or after a short timeout)
+                let refreshedThisSession = false;
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller && !refreshedThisSession) {
+                            refreshedThisSession = true;
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
+                });
             }).catch(err => {
                 console.log('ServiceWorker registration skipped:', err);
             });
 
-            // Auto-refresh when a new Service Worker takes control
+            // Auto-refresh when a new Service Worker takes control (guard against loops)
             let refreshing = false;
+            let lastRefresh = sessionStorage.getItem('sw_last_refresh') || 0;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
+                const now = Date.now();
+                if (!refreshing && (now - lastRefresh > 5000)) {
                     refreshing = true;
+                    sessionStorage.setItem('sw_last_refresh', now);
                     window.location.reload();
                 }
             });
