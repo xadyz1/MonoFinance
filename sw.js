@@ -1,17 +1,17 @@
 // SwiftFinance PWA Service Worker
-const CACHE_NAME = 'swiftfinance-pwa-v80';
+const CACHE_NAME = 'swiftfinance-pwa-v81';
 const ASSETS_TO_CACHE = [
   './',
-  './app.html',
-  './styles.css?v=113',
-  './app.js?v=135',
+  './app',
+  './styles.css?v=114',
+  './app.js?v=136',
+  './landing.js?v=2',
   './manifest.json',
   './favicon.svg',
   './favicon.png',
   './icon-192.png',
   './icon-512.png',
-  './login.html',
-  './swiftfinance-landing-page.html',
+  './login',
   './darkswiftfinance.png',
   './swiftlight.png'
 ];
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('swiftfinance-pwa-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -50,6 +50,8 @@ self.addEventListener('message', (event) => {
 // Fetch Event (Network First, fallback to cache)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   event.respondWith(
     fetch(event.request)
       .then((response) => {

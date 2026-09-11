@@ -153,7 +153,8 @@ app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ messag
 
 app.get('/api/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ message: 'Não autenticado' });
-  const { data: u } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('email,role,name,avatar_url,plan_id').eq('id', req.session.userId).single();
+  const { data: u, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('email,role,name,avatar_url,plan_id').eq('id', req.session.userId).single();
+  if (error || !u) return res.status(500).json({ message: 'Erro ao carregar perfil' });
   res.json({ username: req.session.username, role: u?.role || 'user', name: u?.name || '', avatar_url: u?.avatar_url || '', plan_id: u?.plan_id || null });
 });
 
@@ -204,9 +205,15 @@ app.post('/api/data', requireAuth, async (req, res) => {
     monthly_expense_limit: b.monthlyExpenseLimit || 30000,
     expense_limit_period: b.expenseLimitPeriod || 'day'
   };
-  const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_user_data').select('user_id').eq('user_id', req.session.userId).single();
-  if (existing) await supabase.schema('swiftfinance').from('swiftfinance_user_data').update(payload).eq('user_id', req.session.userId);
-  else await supabase.schema('swiftfinance').from('swiftfinance_user_data').insert({ user_id: req.session.userId, ...payload });
+  const { data: existing, error: lookupError } = await supabase.schema('swiftfinance').from('swiftfinance_user_data').select('user_id').eq('user_id', req.session.userId).maybeSingle();
+  if (lookupError) return res.status(500).json({ message: 'Erro ao carregar dados' });
+  const { error } = existing
+    ? await supabase.schema('swiftfinance').from('swiftfinance_user_data').update(payload).eq('user_id', req.session.userId)
+    : await supabase.schema('swiftfinance').from('swiftfinance_user_data').insert({ user_id: req.session.userId, ...payload });
+  if (error) {
+    console.error('[API /api/data] Save error:', error);
+    return res.status(500).json({ message: 'Erro ao guardar dados' });
+  }
   res.json({ message: 'OK' });
 });
 
@@ -218,14 +225,18 @@ app.post('/api/upload-receipt', requireAuth, async (req, res) => {
   }
   const buffer = Buffer.from(file.replace(/^data:.+;base64,/, ''), 'base64');
   const safeName = Date.now() + '_' + name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const url = `${process.env.BUNNY_STORAGE_ENDPOINT}/${safeName}`;
+  const url = `${process.env.BUNNY_STORAGE_ENDPOINT.replace(/\/+$/, '')}/${safeName}`;
   try {
     const r = await fetch(url, { method: 'PUT', headers: { AccessKey: process.env.BUNNY_API_KEY, 'Content-Type': 'application/octet-stream' }, body: buffer });
     if (!r.ok) throw new Error('Bunny upload failed');
-    const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE}/${safeName}` : url;
-    const { data: rec } = await supabase.schema('swiftfinance').from('swiftfinance_receipts').insert({ user_id: req.session.userId, file_url: publicUrl, file_name: name }).select().single();
+    const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE.replace(/\/+$/, '')}/${safeName}` : url;
+    const { data: rec, error } = await supabase.schema('swiftfinance').from('swiftfinance_receipts').insert({ user_id: req.session.userId, file_url: publicUrl, file_name: name }).select().single();
+    if (error || !rec) throw error || new Error('Receipt not saved');
     res.json({ url: publicUrl, id: rec.id });
-  } catch (e) { res.status(500).json({ message: 'Erro ao enviar ficheiro' }); }
+  } catch (e) {
+    console.error('[API /api/upload-receipt] Error:', e);
+    res.status(500).json({ message: 'Erro ao enviar ficheiro' });
+  }
 });
 
 app.post('/api/upload-avatar', requireAuth, upload.single('file'), async (req, res) => {
@@ -235,12 +246,14 @@ app.post('/api/upload-avatar', requireAuth, upload.single('file'), async (req, r
     return res.status(400).json({ message: 'Ficheiro ou configuração em falta' });
   }
   const safeName = Date.now() + '_avatar_' + req.file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const url = `${process.env.BUNNY_STORAGE_ENDPOINT}/${safeName}`;
+  const url = `${process.env.BUNNY_STORAGE_ENDPOINT.replace(/\/+$/, '')}/${safeName}`;
   try {
     const r = await fetch(url, { method: 'PUT', headers: { AccessKey: process.env.BUNNY_API_KEY, 'Content-Type': req.file.mimetype || 'application/octet-stream' }, body: req.file.buffer });
     console.log('[API /api/upload-avatar] Bunny response status:', r.status);
     if (!r.ok) throw new Error('Bunny upload failed: ' + r.status);
-    const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE}/${safeName}` : url;
+    const publicUrl = process.env.BUNNY_PULL_ZONE ? `${process.env.BUNNY_PULL_ZONE.replace(/\/+$/, '')}/${safeName}` : url;
+    const { error } = await supabase.schema('swiftfinance').from('swiftfinance_users').update({ avatar_url: publicUrl }).eq('id', req.session.userId);
+    if (error) throw error;
     res.json({ url: publicUrl });
   } catch (e) {
     console.error('[API /api/upload-avatar] Error:', e);
@@ -293,10 +306,18 @@ app.put('/api/admin/user/:id/role', requireAdmin, async (req, res) => {
 });
 
 // Plans
-app.get('/api/plans', async (req, res) => {
-  const { data } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').order('sort_order', { ascending: true });
+async function listPlans(req, res) {
+  let query = supabase.schema('swiftfinance').from('swiftfinance_plans').select('*');
+  if (req.path === '/api/plans') query = query.eq('active', true);
+  const { data, error } = await query.order('sort_order', { ascending: true });
+  if (error) {
+    console.error('[API plans] Error:', error);
+    return res.status(500).json({ message: 'Erro ao carregar planos' });
+  }
   res.json({ plans: data || [] });
-});
+}
+app.get('/api/plans', listPlans);
+app.get('/api/admin/plans', requireAdmin, listPlans);
 
 app.post('/api/admin/plans', requireAdmin, async (req, res) => {
   const b = req.body || {};
@@ -430,7 +451,7 @@ app.post('/api/admin/ads', requireAdmin, async (req, res) => {
     console.error('[API /api/admin/ads] Fetch error:', fetchErr);
     return res.status(500).json({ message: 'Erro ao procurar slot' });
   }
-  const upsertData = { slot_name, html_code: html, active: active !== false };
+  const upsertData = { slot_name, html, active: active !== false };
   if (existing) {
     const { error } = await supabase.schema('swiftfinance').from('swiftfinance_advertising').update(upsertData).eq('id', existing.id);
     if (error) { console.error('[API /api/admin/ads] Update error:', error); return res.status(500).json({ message: 'Erro ao atualizar publicidade' }); }

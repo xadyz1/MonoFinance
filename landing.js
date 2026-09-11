@@ -5,14 +5,15 @@
     try {
       const res = await fetch(`${API_URL}/api/plans`);
       if (!res.ok) return;
-      const plans = await res.json();
+      const data = await res.json();
+      const plans = (Array.isArray(data) ? data : data.plans || []).filter(p => p.active !== false);
       const grid = document.getElementById('plans-grid');
       if (!grid || !plans.length) return;
       grid.innerHTML = plans.map(p => {
         const isFree = Number(p.price) === 0;
         const featured = p.popular ? 'featured' : '';
         const badge = p.popular ? `<div class="badge">Mais popular</div>` : '';
-        const features = (p.features || '').split('\n').filter(f => f.trim()).map(f => `<li>${f}</li>`).join('');
+        const features = (Array.isArray(p.features) ? p.features : (p.features || '').split('\n')).filter(f => String(f).trim()).map(f => `<li>${escapeHtml(String(f))}</li>`).join('');
         const btnClass = isFree ? 'secondary' : 'primary';
         const btnText = isFree ? 'Começar grátis' : 'Subscrever';
         const period = isFree ? '/ para sempre' : '/ mês';

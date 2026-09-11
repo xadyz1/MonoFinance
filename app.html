@@ -14,7 +14,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=113">
+    <link rel="stylesheet" href="styles.css?v=114">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="manifest" href="manifest.json">
@@ -524,7 +524,7 @@
                     <div id="savings-summary-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
                         <div class="bg-[#111113] border border-[#202024] rounded-3xl p-6 flex flex-col justify-between">
                             <span
-                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">acumuladoно
+                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Acumulado
                                 por objetivo</span>
                             <div class="text-2xl font-bold font-outfit text-white mt-1" id="savings-current">0.00 €
                             </div>
@@ -532,16 +532,16 @@
 
                         <div class="bg-[#111113] border border-[#202024] rounded-3xl p-6 flex flex-col justify-between">
                             <span
-                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Загальno
-                                objetivo envelopes</span>
+                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Objetivo total
+                                dos envelopes</span>
                             <div class="text-2xl font-bold font-outfit text-white mt-1" id="savings-target">0.00 €</div>
                         </div>
 
                         <div class="bg-[#111113] border border-[#202024] rounded-3xl p-6 flex flex-col justify-between">
                             <div class="flex justify-between items-center mb-1">
                                 <span
-                                    class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Загальний
-                                    progresso</span>
+                                    class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Progresso
+                                    total</span>
                                 <span id="goal-percentage-text" class="text-xs font-bold text-[#20a034]">0%</span>
                             </div>
                             <div
@@ -974,13 +974,12 @@
                         <div
                             class="bg-[#111113] border border-[#202024] rounded-3xl p-4 sm:p-5 flex flex-col justify-between">
                             <span
-                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Сереdias
-                                Despesa por dia</span>
+                                class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Despesa média
+                                por dia</span>
                             <div class="py-1.5">
                                 <div class="text-2xl sm:text-3xl font-bold font-outfit text-white mb-0.5"
                                     id="avg-expense-daily">0.00 €</div>
-                                <p class="text-[11px] text-brand-textSecondary">Média de despesas por dia neste mês
-                                    mês</p>
+                                <p class="text-[11px] text-brand-textSecondary">Média de despesas por dia neste mês</p>
                             </div>
                         </div>
 
@@ -1023,7 +1022,7 @@
                             <div
                                 class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 z-10 flex-shrink-0">
                                 <div>
-                                    <h3 class="font-semibold text-base text-white">Tendências фіnoнсових fluxos</h3>
+                                <h3 class="font-semibold text-base text-white">Tendências dos fluxos financeiros</h3>
                                     <p id="stats-chart-subtitle" class="text-xs text-brand-textSecondary mt-0.5">
                                         Amplitude rendimento e registo financeiros (atual mês)</p>
                                 </div>
@@ -1212,7 +1211,7 @@
             <form id="goal-form" class="space-y-4">
                 <div class="flex flex-col gap-2">
                     <label for="target-amount"
-                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Valor noкопичень
+                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Valor de poupança
                         (€)</label>
                     <input type="number" id="target-amount"
                         class="bg-black border border-[#202024] rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-xs"
@@ -1223,7 +1222,7 @@
                         class="px-4 py-2 border border-[#202024] hover:bg-[#161619] text-xs font-semibold rounded-xl text-white transition-colors">Cancelar</button>
                     <button type="submit"
                         class="px-4 py-2 bg-brand-accent hover:opacity-90 text-xs font-semibold rounded-xl text-white transition-all font-outfit">Guardar
-                        ціль</button>
+                        objetivo</button>
                 </div>
             </form>
         </div>
@@ -1387,11 +1386,11 @@
                 class="flex flex-col items-center justify-center py-6 bg-[#161619] rounded-2xl border border-[#202024] gap-4">
                 <button id="voice-record-pulse-btn"
                     class="w-20 h-20 rounded-full bg-[#20a034] text-white flex items-center justify-center shadow-xl transition-all hover:scale-105 active:scale-95"
-                    title="Iniciar/Parar роdeпіdenoвання">
+                    title="Iniciar/parar reconhecimento de voz">
                     <span class="material-symbols-outlined text-[36px]">mic</span>
                 </button>
                 <p class="text-xs text-center px-4 text-brand-textSecondary font-medium" id="voice-transcript-preview">
-                    "Наприклад: Café 75 EUR і porід 200 EUR"
+                    "Por exemplo: Café 2 EUR e almoço 12 EUR"
                 </p>
             </div>
 
@@ -1436,7 +1435,7 @@
             <div class="flex justify-between items-center border-b border-[#202024] pb-4">
                 <div>
                     <h3 class="font-semibold text-lg text-white" id="envelope-modal-title">Criar envelope</h3>
-                    <p class="text-xs text-brand-textSecondary mt-0.5">Novo ціль para deаощадження fundos</p>
+                    <p class="text-xs text-brand-textSecondary mt-0.5">Novo objetivo para poupar dinheiro</p>
                 </div>
                 <button id="close-envelope-modal-btn" type="button"
                     class="text-brand-textSecondary hover:text-white transition-colors" title="Fechar">
@@ -1449,18 +1448,18 @@
 
                 <div class="flex flex-col gap-1.5">
                     <label for="envelope-title"
-                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Nome конверe /
-                        objetivos</label>
+                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Nome do envelope /
+                        objetivo</label>
                     <input type="text" id="envelope-title"
                         class="bg-black border border-[#202024] rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-xs"
-                        placeholder="Наприклад: Автомporіль, Відпemстка..." required autocomplete="off">
+                        placeholder="Por exemplo: Automóvel, Férias..." required autocomplete="off">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1.5">
                         <label for="envelope-target-amount"
-                            class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Objetivoова
-                            valor
+                            class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Valor do
+                            objetivo
                             (€)</label>
                         <input type="number" id="envelope-target-amount"
                             class="bg-black border border-[#202024] rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-xs"
@@ -1487,7 +1486,7 @@
 
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Cor
-                        конверe</label>
+                        do envelope</label>
                     <div class="flex gap-2.5 items-center" id="envelope-color-picker">
                         <!-- Color buttons -->
                     </div>
@@ -1499,7 +1498,7 @@
                         class="flex-1 py-3 bg-[#161619] border border-[#202024] text-white hover:bg-[#202024] rounded-xl text-xs font-semibold transition-all">Cancelar</button>
                     <button type="submit"
                         class="flex-1 py-3 bg-[#20a034] hover:bg-[#20a034]/90 text-white font-semibold rounded-xl text-xs transition-all shadow-lg shadow-[#20a034]/20">Guardar
-                        конверт</button>
+                        envelope</button>
                 </div>
             </form>
         </div>
@@ -1511,7 +1510,7 @@
             class="modal bg-[#111113] border border-[#202024] p-6 sm:p-8 rounded-3xl max-w-md w-full space-y-5 shadow-2xl">
             <div class="flex justify-between items-center border-b border-[#202024] pb-4">
                 <div>
-                    <h3 class="font-semibold text-lg text-white" id="transfer-modal-title">Depositar конверт</h3>
+                    <h3 class="font-semibold text-lg text-white" id="transfer-modal-title">Depositar no envelope</h3>
                     <p class="text-xs text-brand-textSecondary mt-0.5" id="transfer-modal-subtitle">Objetivo: -</p>
                 </div>
                 <button id="close-transfer-modal-btn" type="button"
@@ -1538,7 +1537,7 @@
 
                 <div class="flex flex-col gap-1.5">
                     <label for="transfer-amount"
-                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Valor перекаdeem
+                        class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">Valor da transferência
                         (€)</label>
                     <input type="number" id="transfer-amount"
                         class="bg-black border border-[#202024] rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-xs"
@@ -1565,9 +1564,8 @@
             </div>
             <div class="space-y-1.5">
                 <h3 class="font-semibold text-base text-white" id="confirm-modal-title">Confirmação ações</h3>
-                <p class="text-xs text-brand-textSecondary leading-relaxed" id="confirm-modal-message">Ви tem certeza,
-                    що
-                    pretende efetuar цю ação?</p>
+                <p class="text-xs text-brand-textSecondary leading-relaxed" id="confirm-modal-message">Tem a certeza
+                    de que pretende efetuar esta ação?</p>
             </div>
             <div class="flex gap-3 pt-2">
                 <button type="button" id="confirm-btn-cancel"
@@ -1589,19 +1587,19 @@
     <!-- Mobile Navigation (Bottom Bar) -->
     <nav
         class="mobile-bottom-nav-container md:hidden bg-[#111113]/95 backdrop-blur-md border border-[#202024] rounded-2xl px-2 py-2 flex justify-around shadow-2xl">
-        <button class="mobile-nav-item active" data-view="dashboard" title="Панель керemвання">
+        <button class="mobile-nav-item active" data-view="dashboard" title="Painel de controlo">
             <span class="material-symbols-outlined text-[20px]">dashboard</span>
-            <span class="text-[9px] font-medium">Панель</span>
+            <span class="text-[9px] font-medium">Painel</span>
         </button>
-        <button class="mobile-nav-item" data-view="income" title="Доходи">
+        <button class="mobile-nav-item" data-view="income" title="Rendimentos">
             <span class="material-symbols-outlined text-[20px]">payments</span>
             <span class="text-[9px] font-medium">Rendimentos</span>
         </button>
-        <button class="mobile-nav-item" data-view="expenses" title="Витрати">
+        <button class="mobile-nav-item" data-view="expenses" title="Despesas">
             <span class="material-symbols-outlined text-[20px]">receipt_long</span>
             <span class="text-[9px] font-medium">Despesas</span>
         </button>
-        <button class="mobile-nav-item" data-view="statistics" title="Сeтистика">
+        <button class="mobile-nav-item" data-view="statistics" title="Estatísticas">
             <span class="material-symbols-outlined text-[20px]">monitoring</span>
             <span class="text-[9px] font-medium">Estatísticas</span>
         </button>
@@ -1618,10 +1616,8 @@
                         <span class="material-symbols-outlined text-[22px]">receipt_long</span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-base sm:text-lg text-white">Completo histórico витрат</h3>
-                        <p class="text-xs text-brand-textSecondary mt-0.5">Todas deафіксовані registo financeiros deа
-                            todo
-                            período</p>
+                        <h3 class="font-bold text-base sm:text-lg text-white">Histórico completo de despesas</h3>
+                        <p class="text-xs text-brand-textSecondary mt-0.5">Todas as despesas registadas ao longo de todo o período</p>
                     </div>
                 </div>
                 <button id="close-all-expenses-modal" type="button"
@@ -1638,7 +1634,7 @@
                         class="material-symbols-outlined absolute left-3 top-2.5 text-brand-textSecondary text-[18px]">search</span>
                     <input type="text" id="all-expenses-search"
                         class="w-full bg-black border border-[#202024] rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-brand-accent"
-                        placeholder="Pesquisar витрат de descrição...">
+                        placeholder="Pesquisar despesas por descrição...">
                 </div>
                 <div class="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
                     <span class="text-xs text-brand-textSecondary">Total gasto:</span>
@@ -1684,10 +1680,8 @@
                         <span class="material-symbols-outlined text-[22px]">payments</span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-base sm:text-lg text-white">Completo histórico atéходів</h3>
-                        <p class="text-xs text-brand-textSecondary mt-0.5">Todas deараховані rendimento financeiros deа
-                            todo
-                            período</p>
+                        <h3 class="font-bold text-base sm:text-lg text-white">Histórico completo de rendimentos</h3>
+                        <p class="text-xs text-brand-textSecondary mt-0.5">Todos os rendimentos registados ao longo de todo o período</p>
                     </div>
                 </div>
                 <button id="close-all-income-modal" type="button"
@@ -1704,7 +1698,7 @@
                         class="material-symbols-outlined absolute left-3 top-2.5 text-brand-textSecondary text-[18px]">search</span>
                     <input type="text" id="all-income-search"
                         class="w-full bg-black border border-[#202024] rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-brand-accent"
-                        placeholder="Pesquisar atéходів de descrição...">
+                        placeholder="Pesquisar rendimentos por descrição...">
                 </div>
                 <div class="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
                     <span class="text-xs text-brand-textSecondary">Total acumulado:</span>
@@ -1752,8 +1746,8 @@
                     </div>
                     <div>
                         <h3 id="category-details-title" class="font-bold text-base sm:text-lg text-white">Categoria</h3>
-                        <p id="category-details-subtitle" class="text-xs text-brand-textSecondary mt-0.5">Витрати deа
-                            porраний período</p>
+                        <p id="category-details-subtitle" class="text-xs text-brand-textSecondary mt-0.5">Despesas no
+                            período selecionado</p>
                     </div>
                 </div>
                 <button id="close-category-details-modal" type="button"
@@ -1771,7 +1765,7 @@
                         class="material-symbols-outlined absolute left-3 top-2.5 text-brand-textSecondary text-[18px]">search</span>
                     <input type="text" id="category-details-search"
                         class="w-full bg-black border border-[#202024] rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-brand-purple"
-                        placeholder="Pesquisar em цій categoriї...">
+                        placeholder="Pesquisar nesta categoria...">
                 </div>
                 <div class="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
                     <span class="text-xs text-brand-textSecondary">Total na categoria:</span>
@@ -1817,9 +1811,9 @@
                         <span class="material-symbols-outlined text-[20px]">track_changes</span>
                     </div>
                     <div>
-                        <h3 id="limit-modal-header-title" class="font-semibold text-lg text-white">Limite витрат</h3>
-                        <p id="limit-modal-header-subtitle" class="text-xs text-brand-textSecondary mt-0.5">Максимальno
-                            valor витрат no dia ou semana</p>
+                        <h3 id="limit-modal-header-title" class="font-semibold text-lg text-white">Limite de despesas</h3>
+                        <p id="limit-modal-header-subtitle" class="text-xs text-brand-textSecondary mt-0.5">Valor máximo
+                            de despesas por dia, semana ou mês</p>
                     </div>
                 </div>
                 <button id="close-daily-limit-modal-btn" type="button"
@@ -1833,20 +1827,20 @@
                     <label class="text-xs font-semibold text-brand-textSecondary">Período do limite</label>
                     <div class="grid grid-cols-3 gap-1.5 bg-[#161619] p-1 rounded-xl border border-[#202024]">
                         <button type="button" id="limit-period-day-btn"
-                            class="py-2 text-xs font-semibold rounded-lg transition-all bg-brand-purple text-white">На
+                            class="py-2 text-xs font-semibold rounded-lg transition-all bg-brand-purple text-white">Por
                             dia</button>
                         <button type="button" id="limit-period-week-btn"
-                            class="py-2 text-xs font-semibold rounded-lg transition-all text-brand-textSecondary hover:text-white">На
+                            class="py-2 text-xs font-semibold rounded-lg transition-all text-brand-textSecondary hover:text-white">Por
                             semana</button>
                         <button type="button" id="limit-period-month-btn"
-                            class="py-2 text-xs font-semibold rounded-lg transition-all text-brand-textSecondary hover:text-white">На
+                            class="py-2 text-xs font-semibold rounded-lg transition-all text-brand-textSecondary hover:text-white">Por
                             mês</button>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
                     <label for="daily-limit-input" id="daily-limit-input-label"
-                        class="text-xs font-semibold text-brand-textSecondary">Valor лімітem (€)</label>
+                        class="text-xs font-semibold text-brand-textSecondary">Valor do limite (€)</label>
                     <input type="number" id="daily-limit-input" step="0.01" min="1" required placeholder="1000.00"
                         class="w-full bg-[#161619] border border-[#202024] focus:border-brand-purple rounded-xl px-4 py-3 text-white text-sm outline-none transition-colors font-outfit">
                 </div>
@@ -2037,7 +2031,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=135" defer></script>
+    <script src="app.js?v=136" defer></script>
 <script src="dashboard.js?v=2" defer></script>
     <!-- Stripe Checkout Modal -->
     <div id="stripe-modal" class="modal-overlay" style="z-index: 200;">
