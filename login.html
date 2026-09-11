@@ -206,7 +206,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          window.location.href = '/app.html';
+          window.location.href = '/app';
           return;
         }
         errBox.textContent = 'Nome de utilizador ou password incorretos.';
