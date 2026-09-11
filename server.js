@@ -129,3 +129,51 @@ app.post('/api/categorize', requireAuth, async (req,res)=>{
     res.json({category:cats.includes(c)?c:defaultCat});
   }catch(e){ res.json({category:defaultCat}); }
 });
+
+// Voice transcription
+app.post('/api/voice-transcribe', requireAuth, async (req,res)=>{
+  const GROQ_KEY=process.env.GROQ_API_KEY;
+  if(!GROQ_KEY) return res.status(500).json({message:'API key não configurada'});
+  try{
+    const chunks=[]; req.on('data',c=>chunks.push(c));
+    await new Promise(r=>req.on('end',r));
+    const body=JSON.parse(Buffer.concat(chunks).toString());
+    const audio=Buffer.from(body.audio,'base64');
+    const fd=new FormData();
+    fd.append('file',new Blob([audio],{type:'audio/webm'}),'audio.webm');
+    fd.append('model','whisper-large-v3');
+    fd.append('language','pt');
+    const r=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{method:'POST',headers:{'Authorization':'Bearer '+GROQ_KEY},body:fd});
+    const d=await r.json();
+    res.json({text:d.text||''});
+  }catch(e){ res.status(500).json({message:'Erro ao transcrever'}); }
+});
+
+// Static files & SPA
+app.all('/api/*', (req,res)=>res.status(404).json({message:'Não encontrado'}));
+app.get('/login', (req,res)=>res.sendFile(path.join(__dirname,'login.html')));
+app.get('/app', (req,res)=>res.sendFile(path.join(__dirname,'app.html')));
+app.use(express.static(__dirname, {index:false}));
+app.get('*', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
+
+// Recurring expenses scheduler
+function processRecurring(){
+  const now=new Date(); const day=now.getDate(); const prefix=now.toISOString().slice(0,7);
+  const rows=db.prepare("SELECT user_id,transactions,recurring_expenses FROM user_data").all();
+  for(const row of rows){
+    try{
+      const tx=JSON.parse(row.transactions||'[]'); const rec=JSON.parse(row.recurring_expenses||'[]');
+      let changed=false;
+      for(const r of rec){
+        if(!r.active||!r.dayOfMonth||r.dayOfMonth!==day) continue;
+        if(tx.some(t=>t.recurringId===r.id&&t.date&&t.date.startsWith(prefix))) continue;
+        tx.unshift({id:'rec_'+r.id+'_'+Date.now(),amount:r.amount,type:r.type||'expense',description:r.description||'Despesa recorrente',date:now.toISOString().slice(0,10),category:r.category||'',recurringId:r.id});
+        changed=true;
+      }
+      if(changed) db.prepare("UPDATE user_data SET transactions=? WHERE user_id=?").run(JSON.stringify(tx),row.user_id);
+    }catch(e){}
+  }
+}
+processRecurring(); setInterval(processRecurring,600000);
+
+app.listen(PORT, ()=>console.log('SwiftFinance running on port '+PORT));
