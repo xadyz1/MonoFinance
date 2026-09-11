@@ -561,8 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (e) { console.warn('Avatar upload failed', e); }
                 }
                 try {
-                    const res = await fetch(getApiUrl('api/me'), {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                    const res = await fetch(getApiUrl('api/profile'), {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
                         body: JSON.stringify({ name, avatar_url: avatar })
                     });
                     const data = await res.json();
@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (btnLogout) {
                     btnLogout.classList.remove('hidden');
                     const textSpan = btnLogout.querySelector('span:not(.material-symbols-outlined)');
-                    if (textSpan) textSpan.textContent = 'Pechar sesión';
+                    if (textSpan) textSpan.textContent = 'Terminar sessão';
                 }
                 const mobileVoiceBtn = document.getElementById('mobile-voice-btn');
                 if (mobileVoiceBtn) mobileVoiceBtn.classList.remove('hidden');
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             if (response.ok) {
-                showToast(isRegisterMode ? 'Conta creada con éxito' : 'Sesión iniciada correctamente', 'success');
+                showToast(isRegisterMode ? 'Conta criada com sucesso' : 'Sessão iniciada com sucesso', 'success');
                 if (authUsernameInput) authUsernameInput.value = '';
                 if (authPasswordInput) authPasswordInput.value = '';
                 await checkAuth();
