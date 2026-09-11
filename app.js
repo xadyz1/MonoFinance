@@ -747,17 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Demo mode removed - redirect to login
         window.location.href = '/';
     }
-        if (btnLogout) {
-            btnLogout.classList.remove('hidden');
-            const textSpan = btnLogout.querySelector('span:not(.material-symbols-outlined)');
-            if (textSpan) textSpan.textContent = 'Saír do demo';
-        }
-        const mobileVoiceBtn = document.getElementById('mobile-voice-btn');
-        if (mobileVoiceBtn) mobileVoiceBtn.classList.remove('hidden');
-
-        // Load local storage data
-        loadLocalData();
-    }
 
     async function handleLogout() {
         try {
