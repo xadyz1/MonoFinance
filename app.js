@@ -836,6 +836,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateWelcomeSection();
                 isDemoMode = false;
 
+                // Chatwoot Auth Integration
+                window.currentUserData = data;
+                if (typeof window.identifyChatwootUser === 'function') {
+                    window.identifyChatwootUser(data);
+                }
+
                 // Smooth UI transition
                 showAppScreenSmoothly();
 
