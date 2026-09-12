@@ -60,26 +60,33 @@ test('dashboard ad fills its independent section and is revealed only when activ
   }
 });
 
-test('landing subscription redirects to checkout, preserves login choice and shows errors', async () => {
+test('landing subscription opens embedded checkout, preserves login choice and shows errors', async () => {
   for (const responseStatus of [200, 502]) {
     const { document } = dom();
     const button = document.createElement('button');
     button.dataset = { priceId: 'price_real123', free: 'false' };
     document.querySelectorAll = () => [button];
     const calls = [];
-    const window = { location: { origin: 'https://app.example', search: '', href: '' } };
+    let embeddedMounted = false;
+    const window = {
+      location: { origin: 'https://app.example', search: '', href: '' },
+      Stripe: () => ({
+        initEmbeddedCheckout: ({ clientSecret }) => ({
+          mount: selector => { embeddedMounted = selector === '#embedded-checkout'; }
+        })
+      })
+    };
     vm.runInNewContext(read('landing.js'), { document, window, URL, URLSearchParams, console,
       fetch: async (url, options) => {
         calls.push({ url, options });
         if (url.endsWith('/api/plans')) return { ok: true, json: async () => ({ plans: [{ name: 'Pro', price: 5, active: true }] }) };
         if (url.includes('/api/ads')) return { ok: true, json: async () => ({ active: false }) };
-        return { ok: responseStatus === 200, status: responseStatus, json: async () => ({ url: 'https://checkout.stripe.com/c/pay/cs_test_123', message: 'Preço não configurado' }) };
+        return { ok: responseStatus === 200, status: responseStatus, json: async () => ({ clientSecret: 'cs_test_secret_123', message: 'Preço não configurado' }) };
       }
     });
     await new Promise(resolve => setImmediate(resolve));
     button.listeners.click();
     await new Promise(resolve => setImmediate(resolve));
-    // Fill the modal form before submitting
     document.getElementById('subscribe-name').value = 'Ana';
     document.getElementById('subscribe-email').value = 'ana@example.com';
     document.getElementById('subscribe-form').listeners.submit({ preventDefault() {} });
@@ -87,9 +94,11 @@ test('landing subscription redirects to checkout, preserves login choice and sho
     const checkoutCall = calls.find(c => c.options && c.options.method === 'POST' && c.url.includes('/api/create-checkout-session'));
     assert.ok(checkoutCall, 'expected a create-checkout-session call');
     assert.equal(JSON.parse(checkoutCall.options.body).priceId, 'price_real123');
-    if (responseStatus === 200) assert.equal(window.location.href, 'https://checkout.stripe.com/c/pay/cs_test_123');
+    if (responseStatus === 200) {
+      assert.equal(embeddedMounted, true);
+      assert.equal(document.getElementById('stripeModal').classList.contains('open'), true);
+    }
     if (responseStatus === 502) {
-      assert.equal(window.location.href, '');
       assert.equal(document.getElementById('subscribe-error').textContent, 'Preço não configurado');
     }
   }
@@ -106,19 +115,25 @@ test('login returns to the selected plan, never an arbitrary external URL', asyn
   assert.equal(window.location.href, '/?checkout=price_real123#pricing');
 });
 
-test('landing resumes checkout once after login and removes the query parameter', async () => {
+test('landing resumes embedded checkout once after login and removes the query parameter', async () => {
   const { document } = dom();
   const historyCalls = [];
   const checkoutCalls = [];
+  let embeddedMounted = false;
   const window = {
     location: { origin: 'https://app.example', pathname: '/', search: '?checkout=price_real123', href: '' },
-    history: { replaceState: (...args) => historyCalls.push(args) }
+    history: { replaceState: (...args) => historyCalls.push(args) },
+    Stripe: () => ({
+      initEmbeddedCheckout: ({ clientSecret }) => ({
+        mount: selector => { embeddedMounted = selector === '#embedded-checkout'; }
+      })
+    })
   };
   vm.runInNewContext(read('landing.js'), { document, window, URL, URLSearchParams, console,
     fetch: async (url, options) => {
       if (options) {
         checkoutCalls.push(options);
-        return { ok: true, status: 200, json: async () => ({ url: 'https://checkout.stripe.com/c/pay/cs_test_123' }) };
+        return { ok: true, status: 200, json: async () => ({ clientSecret: 'cs_test_secret_123' }) };
       }
       return { ok: true, json: async () => ({ plans: [], active: false }) };
     }
@@ -126,7 +141,8 @@ test('landing resumes checkout once after login and removes the query parameter'
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(checkoutCalls.length, 1);
   assert.equal(historyCalls[0][2], '/#pricing');
-  assert.equal(window.location.href, 'https://checkout.stripe.com/c/pay/cs_test_123');
+  assert.equal(embeddedMounted, true);
+  assert.equal(document.getElementById('stripeModal').classList.contains('open'), true);
 });
 
 test('receipt modal previews images/PDFs, handles errors and restores focus', () => {

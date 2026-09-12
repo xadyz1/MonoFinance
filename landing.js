@@ -83,15 +83,28 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Não foi possível iniciar o pagamento.');
-      const checkoutUrl = new URL(data.url);
-      if (checkoutUrl.protocol !== 'https:' || checkoutUrl.hostname !== 'checkout.stripe.com') {
-        throw new Error('O servidor devolveu um endereço de pagamento inválido.');
-      }
-      window.location.href = checkoutUrl.href;
+      if (!data.clientSecret) throw new Error('O servidor não devolveu uma sessão de pagamento válida.');
+      closeSubscribeModal();
+      await openEmbeddedCheckout(data.clientSecret);
     } catch (err) {
       if (error) error.textContent = err.message || 'Erro ao iniciar pagamento.';
       if (payBtn) { payBtn.disabled = false; payBtn.textContent = 'Proceder ao pagamento'; }
     }
+  }
+
+  async function openEmbeddedCheckout(clientSecret) {
+    const container = document.getElementById('stripe-container');
+    const stripeKey = window.STRIPE_PUBLISHABLE_KEY || 'pk_live_...';
+    const stripe = window.Stripe ? window.Stripe(stripeKey) : null;
+    if (!stripe) {
+      container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:16px">Stripe não está disponível. Recarregue a página.</p>';
+      openStripeModal();
+      return;
+    }
+    container.innerHTML = '<div id="embedded-checkout" style="flex:1"></div>';
+    openStripeModal();
+    const checkout = await stripe.initEmbeddedCheckout({ clientSecret });
+    checkout.mount('#embedded-checkout');
   }
 
   let checkoutPending = false;
@@ -99,7 +112,7 @@
     if (checkoutPending) return;
     const container = document.getElementById('stripe-container');
     openStripeModal();
-    container.textContent = 'A preparar o pagamento seguro…';
+    container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:16px">A preparar o pagamento seguro…</p>';
     checkoutPending = true;
     try {
       if (!priceId) throw new Error('Este plano ainda não tem um preço Stripe configurado.');
@@ -114,13 +127,10 @@
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Não foi possível iniciar o pagamento.');
-      const checkoutUrl = new URL(data.url);
-      if (checkoutUrl.protocol !== 'https:' || checkoutUrl.hostname !== 'checkout.stripe.com') {
-        throw new Error('O servidor devolveu um endereço de pagamento inválido.');
-      }
-      window.location.href = checkoutUrl.href;
+      if (!data.clientSecret) throw new Error('O servidor não devolveu uma sessão de pagamento válida.');
+      await openEmbeddedCheckout(data.clientSecret);
     } catch (error) {
-      container.textContent = error.message || 'Não foi possível ligar ao serviço de pagamentos.';
+      container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:16px">' + (error.message || 'Não foi possível ligar ao serviço de pagamentos.') + '</p>';
       const retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'btn primary';

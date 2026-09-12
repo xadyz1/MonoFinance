@@ -469,16 +469,18 @@ app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const appUrl = (process.env.APP_URL || 'http://localhost:5001').replace(/\/+$/, '');
     const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/login?subscribed=1&user=${userId}`,
-      cancel_url: `${appUrl}/#pricing`,
+      return_url: `${appUrl}/login?subscribed=1&user=${userId}`,
+      redirect_on_completion: 'never',
+      tax_id_collection: { enabled: true },
       client_reference_id: String(userId),
       metadata: { userId: String(userId), planId: String(plan.id), email: userEmail || '', name: userName || '' },
       customer_email: userEmail || undefined
     });
     console.log('[API checkout] Session created:', session.id);
-    res.json({ sessionId: session.id, url: session.url });
+    res.json({ sessionId: session.id, clientSecret: session.client_secret });
   } catch (e) {
     console.error('[API checkout] Stripe error:', e.type, e.code, e.message);
     res.status(502).json({ message: 'Não foi possível iniciar o pagamento. Verifique a configuração do preço e da conta Stripe.' });
@@ -726,7 +728,7 @@ async function seedInitialData() {
   if (!plans || plans.length === 0) {
     await supabase.schema('swiftfinance').from('swiftfinance_plans').insert([
       { name: 'Simple', description: 'O essencial para começar a controlar as suas finanças.', price: 0, stripe_price_id: 'price_free', price_id: 'price_free', features: ['Contas e despesas ilimitadas','Categorias personalizadas','Resumo financeiro mensal','Acesso web e mobile'], popular: false, sort_order: 1, active: true },
-      { name: 'Advance', description: 'Mais detalhe, automação e inteligência para crescer.', price: 4.99, stripe_price_id: 'price_advance', price_id: 'price_advance', features: ['Tudo do plano Simple','Metas e orçamentos avançados','Insights e relatórios inteligentes','Exportação e sincronização'], popular: true, sort_order: 2, active: true }
+      { name: 'Advance', description: 'Mais detalhe, automação e inteligência para crescer.', price: 4.99, stripe_price_id: 'price_1UEg0fIHTOjFV4UaNbZgBi3J', price_id: 'price_1UEg0fIHTOjFV4UaNbZgBi3J', features: ['Tudo do plano Simple','Metas e orçamentos avançados','Insights e relatórios inteligentes','Exportação e sincronização'], popular: true, sort_order: 2, active: true }
     ]);
   }
 }

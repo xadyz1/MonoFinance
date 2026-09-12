@@ -144,21 +144,31 @@
         serviceWorkerParam: { scope: '/' },
         serviceWorkerPath: 'OneSignalSDKWorker.js',
         notifyButton: {
-          enable: true,
+          enable: false,
         },
       });
-      // Hide the OneSignal notify button after the user subscribes
+      // Apply user preference for notifications
       try {
-        const state = await OneSignal.User.PushSubscription.getStateAsync && OneSignal.User.PushSubscription.getStateAsync();
-        if (state && state.isSubscribed) {
-          OneSignal.Notifications.setSetting('allowNotifyButton', false);
+        const settingsRes = await fetch('/api/settings', { credentials: 'same-origin' });
+        const settings = settingsRes.ok ? (await settingsRes.json()).settings || {} : {};
+        const notificationsEnabled = settings.notifications !== false;
+        OneSignal.Notifications.setSetting('allowNotifyButton', false);
+        if (notificationsEnabled) {
+          await OneSignal.Notifications.requestPermission();
+        } else {
+          await OneSignal.Notifications.permissionChange && OneSignal.User.PushSubscription.optOut && OneSignal.User.PushSubscription.optOut();
         }
-        OneSignal.Notifications.addEventListener('subscriptionChange', (event) => {
-          if (event && event.current) {
-            OneSignal.Notifications.setSetting('allowNotifyButton', false);
-          }
+        OneSignal.Notifications.addEventListener('permissionChange', async (event) => {
+          try {
+            await fetch('/api/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ notifications: event.to === 'granted' })
+            });
+          } catch (e) { console.warn('Failed to save notification preference', e); }
         });
-      } catch (e) { console.warn('OneSignal notify button config failed', e); }
+      } catch (e) { console.warn('OneSignal settings config failed', e); }
     });
   </script>
 

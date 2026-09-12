@@ -40,7 +40,7 @@ async function backend(t, failTable = null, options = {}) {
         checkout: { sessions: { create: async payload => {
           calls.push({ checkout: payload });
           if (options.stripeError) throw new Error('Simulated Stripe error');
-          return { id: 'cs_test_123', url: 'https://checkout.stripe.com/c/pay/cs_test_123' };
+          return { id: 'cs_test_123', client_secret: 'cs_test_secret_123' };
         } } },
         webhooks: { constructEvent: body => {
           assert.ok(Buffer.isBuffer(body));
@@ -188,11 +188,14 @@ test('checkout uses a server-created Stripe session and clean return URLs', asyn
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ priceId: 'price_real123' })
   });
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).url, 'https://checkout.stripe.com/c/pay/cs_test_123');
+  const json = await response.json();
+  assert.equal(json.clientSecret, 'cs_test_secret_123');
   const { checkout } = calls.find(c => c.checkout);
+  assert.equal(checkout.ui_mode, 'embedded');
   assert.equal(checkout.line_items[0].price, 'price_real123');
-  assert.equal(checkout.success_url, 'https://finance.example/login?subscribed=1&user=7');
-  assert.equal(checkout.cancel_url, 'https://finance.example/#pricing');
+  assert.equal(checkout.return_url, 'https://finance.example/login?subscribed=1&user=7');
+  assert.equal(checkout.redirect_on_completion, 'never');
+  assert.equal(checkout.tax_id_collection.enabled, true);
   assert.equal(checkout.client_reference_id, '7');
   assert.equal(checkout.metadata.planId, '1');
   assert.ok(calls.find(c => c.table === 'swiftfinance_plans').filters.some(([key, value]) => key === 'active' && value === true));
