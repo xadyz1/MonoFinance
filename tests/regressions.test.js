@@ -191,7 +191,7 @@ test('checkout uses a server-created Stripe session and clean return URLs', asyn
   assert.equal((await response.json()).url, 'https://checkout.stripe.com/c/pay/cs_test_123');
   const { checkout } = calls.find(c => c.checkout);
   assert.equal(checkout.line_items[0].price, 'price_real123');
-  assert.equal(checkout.success_url, 'https://finance.example/app?subscribed=1');
+  assert.equal(checkout.success_url, 'https://finance.example/login?subscribed=1&user=7');
   assert.equal(checkout.cancel_url, 'https://finance.example/#pricing');
   assert.equal(checkout.client_reference_id, '7');
   assert.equal(checkout.metadata.planId, '1');

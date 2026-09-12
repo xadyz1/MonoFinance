@@ -151,21 +151,77 @@
                     <img src="swiftlight.png" alt="SwiftFinance" class="h-7 w-auto logo-light hidden">
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="btn-mobile-settings"
+                    <button id="btn-mobile-menu"
                         class="w-8 h-8 rounded-lg bg-[#161619] border border-[#202024] flex items-center justify-center text-brand-textSecondary hover:text-white transition-colors"
-                        title="Definições">
-                        <span class="material-symbols-outlined text-[18px]">settings</span>
-                    </button>
-                    <button id="theme-toggle-mobile"
-                        class="w-8 h-8 rounded-lg bg-[#161619] border border-[#202024] flex items-center justify-center text-brand-textSecondary hover:text-white transition-colors"
-                        title="Alternar tema">
-                        <span class="material-symbols-outlined text-[18px] sun-icon">light_mode</span>
-                        <span class="material-symbols-outlined text-[18px] moon-icon">dark_mode</span>
+                        title="Menu" aria-label="Abrir menu">
+                        <span class="material-symbols-outlined text-[18px]">menu</span>
                     </button>
                 </div>
             </header>
 
+            <!-- Mobile Side Panel -->
+            <div id="mobile-side-panel-overlay" class="mobile-side-panel-overlay md:hidden" aria-hidden="true"></div>
+            <aside id="mobile-side-panel" class="mobile-side-panel md:hidden" aria-label="Menu de gestão">
+                <div class="flex flex-col h-full p-5">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-3">
+                            <img id="side-panel-avatar" src="favicon.png" alt="Avatar" class="w-10 h-10 rounded-full border border-[#202024] object-cover bg-[#161619]">
+                            <div class="min-w-0">
+                                <p class="text-[10px] text-brand-textSecondary truncate">Bem-vindo</p>
+                                <p id="side-panel-name" class="text-sm font-semibold text-white truncate">Utilizador</p>
+                            </div>
+                        </div>
+                        <button id="btn-close-side-panel"
+                            class="w-8 h-8 rounded-lg bg-[#161619] border border-[#202024] flex items-center justify-center text-brand-textSecondary hover:text-white transition-colors"
+                            title="Fechar" aria-label="Fechar menu">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
 
+                    <nav class="flex-1 space-y-1">
+                        <button class="mobile-side-item active" data-view="dashboard">
+                            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                            <span class="font-medium">Painel</span>
+                        </button>
+                        <button class="mobile-side-item" data-view="income">
+                            <span class="material-symbols-outlined text-[20px]">payments</span>
+                            <span class="font-medium">Rendimentos</span>
+                        </button>
+                        <button class="mobile-side-item" data-view="expenses">
+                            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                            <span class="font-medium">Despesas</span>
+                        </button>
+                        <button class="mobile-side-item" data-view="statistics">
+                            <span class="material-symbols-outlined text-[20px]">monitoring</span>
+                            <span class="font-medium">Estatísticas</span>
+                        </button>
+
+                        <div class="my-4 h-px bg-[#202024]"></div>
+
+                        <button class="mobile-side-item text-brand-textSecondary" id="side-panel-theme-toggle">
+                            <span class="material-symbols-outlined text-[20px] sun-icon">light_mode</span>
+                            <span class="material-symbols-outlined text-[20px] moon-icon">dark_mode</span>
+                            <span class="font-medium">Alternar tema</span>
+                        </button>
+                        <button class="mobile-side-item text-brand-textSecondary" id="side-panel-settings">
+                            <span class="material-symbols-outlined text-[20px]">settings</span>
+                            <span class="font-medium">Definições</span>
+                        </button>
+                        <button class="mobile-side-item text-brand-textSecondary hidden" id="side-panel-admin">
+                            <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                            <span class="font-medium">Admin</span>
+                        </button>
+                    </nav>
+
+                    <div class="pt-4 border-t border-[#202024]">
+                        <button id="side-panel-logout"
+                            class="mobile-side-item text-brand-accent w-full">
+                            <span class="material-symbols-outlined text-[20px]">logout</span>
+                            <span class="font-medium">Terminar sessão</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
 
             <!-- Screen Views Container -->
             <div class="flex-grow flex flex-col">

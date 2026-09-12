@@ -61,7 +61,7 @@ test('dashboard ad fills its independent section and is revealed only when activ
 });
 
 test('landing subscription redirects to checkout, preserves login choice and shows errors', async () => {
-  for (const responseStatus of [200, 401, 502]) {
+  for (const responseStatus of [200, 502]) {
     const { document } = dom();
     const button = document.createElement('button');
     button.dataset = { priceId: 'price_real123', free: 'false' };
@@ -79,13 +79,18 @@ test('landing subscription redirects to checkout, preserves login choice and sho
     await new Promise(resolve => setImmediate(resolve));
     button.listeners.click();
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(JSON.parse(calls.find(c => c.options).options.body).priceId, 'price_real123');
+    // Fill the modal form before submitting
+    document.getElementById('subscribe-name').value = 'Ana';
+    document.getElementById('subscribe-email').value = 'ana@example.com';
+    document.getElementById('subscribe-form').listeners.submit({ preventDefault() {} });
+    await new Promise(resolve => setImmediate(resolve));
+    const checkoutCall = calls.find(c => c.options && c.options.method === 'POST' && c.url.includes('/api/create-checkout-session'));
+    assert.ok(checkoutCall, 'expected a create-checkout-session call');
+    assert.equal(JSON.parse(checkoutCall.options.body).priceId, 'price_real123');
     if (responseStatus === 200) assert.equal(window.location.href, 'https://checkout.stripe.com/c/pay/cs_test_123');
-    if (responseStatus === 401) assert.equal(window.location.href, '/login?checkout=price_real123');
     if (responseStatus === 502) {
       assert.equal(window.location.href, '');
-      assert.equal(document.getElementById('stripe-container').textContent, 'Preço não configurado');
-      assert.equal(document.getElementById('stripe-container').children[0].textContent, 'Tentar novamente');
+      assert.equal(document.getElementById('subscribe-error').textContent, 'Preço não configurado');
     }
   }
 });

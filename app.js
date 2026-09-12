@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Settings Modal Event Listeners
             const settingsModal = document.getElementById('settings-modal');
             const btnSettings = document.getElementById('btn-settings');
-            const btnMobileSettings = document.getElementById('btn-mobile-settings');
+            const btnMobileSettings = document.getElementById('side-panel-settings');
             const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
             const settingsUsernameDisplay = document.getElementById('settings-username-display');
 
@@ -644,8 +644,76 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Mobile Theme Toggle Event Listener
-            const themeToggleMobileBtn = document.getElementById('theme-toggle-mobile');
-            if (themeToggleMobileBtn) themeToggleMobileBtn.addEventListener('click', toggleTheme);
+            const themeToggleMobileBtn = document.getElementById('side-panel-theme-toggle');
+            if (themeToggleMobileBtn) themeToggleMobileBtn.addEventListener('click', () => {
+                toggleTheme();
+                closeMobileSidePanel();
+            });
+
+            // Mobile Side Panel
+            const mobileSidePanel = document.getElementById('mobile-side-panel');
+            const mobileSidePanelOverlay = document.getElementById('mobile-side-panel-overlay');
+            const btnMobileMenu = document.getElementById('btn-mobile-menu');
+            const btnCloseSidePanel = document.getElementById('btn-close-side-panel');
+            const sidePanelAdmin = document.getElementById('side-panel-admin');
+            const sidePanelLogout = document.getElementById('side-panel-logout');
+            const sidePanelSettings = document.getElementById('side-panel-settings');
+
+            const openMobileSidePanel = () => {
+                if (mobileSidePanel) mobileSidePanel.classList.add('active');
+                if (mobileSidePanelOverlay) mobileSidePanelOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                updateSidePanelActiveState();
+            };
+
+            const closeMobileSidePanel = () => {
+                if (mobileSidePanel) mobileSidePanel.classList.remove('active');
+                if (mobileSidePanelOverlay) mobileSidePanelOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            };
+
+            const updateSidePanelActiveState = () => {
+                const activeView = document.querySelector('.dashboard-view.active');
+                const currentViewId = activeView ? activeView.id.replace('view-', '') : 'dashboard';
+                document.querySelectorAll('.mobile-side-item').forEach(item => {
+                    if (item.dataset.view === currentViewId) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            };
+
+            if (btnMobileMenu) btnMobileMenu.addEventListener('click', openMobileSidePanel);
+            if (btnCloseSidePanel) btnCloseSidePanel.addEventListener('click', closeMobileSidePanel);
+            if (mobileSidePanelOverlay) mobileSidePanelOverlay.addEventListener('click', closeMobileSidePanel);
+
+            document.querySelectorAll('.mobile-side-item[data-view]').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetView = item.dataset.view;
+                    if (targetView) {
+                        switchView(targetView);
+                        closeMobileSidePanel();
+                    }
+                });
+            });
+
+            if (sidePanelSettings) sidePanelSettings.addEventListener('click', () => {
+                openSettingsModal();
+                closeMobileSidePanel();
+            });
+
+            if (sidePanelAdmin) sidePanelAdmin.addEventListener('click', () => {
+                if (adminModal) adminModal.classList.add('active');
+                loadAdminUsers();
+                closeMobileSidePanel();
+            });
+
+            if (sidePanelLogout) sidePanelLogout.addEventListener('click', () => {
+                handleLogout();
+                closeMobileSidePanel();
+            });
 
             // Initialize Swipe Navigation between screens
             initSwipeNavigation();
@@ -789,7 +857,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.role === 'admin') {
                     const adminBtn = document.getElementById('btn-admin');
                     if (adminBtn) adminBtn.classList.remove('hidden');
+                    const sidePanelAdmin = document.getElementById('side-panel-admin');
+                    if (sidePanelAdmin) sidePanelAdmin.classList.remove('hidden');
                 }
+
+                // Update side panel profile info if elements exist
+                const sidePanelAvatar = document.getElementById('side-panel-avatar');
+                const sidePanelName = document.getElementById('side-panel-name');
+                if (sidePanelAvatar) sidePanelAvatar.src = currentUserAvatar || 'favicon.png';
+                if (sidePanelName) sidePanelName.textContent = currentUserName || currentUser || 'Utilizador';
             } else {
                 showAuthScreen();
             }
