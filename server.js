@@ -570,8 +570,9 @@ app.post('/api/voice-transcribe', requireAuth, async (req, res) => {
 const UK_MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 async function checkLimitsAndNotify() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name,status');
   for (const u of users || []) {
+    if (u.status === 'inactive') continue;
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
     const now = new Date();
@@ -589,8 +590,9 @@ async function checkLimitsAndNotify() {
 }
 
 async function sendDailySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name,status');
   for (const u of users || []) {
+    if (u.status === 'inactive') continue;
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
     const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0];
@@ -603,10 +605,11 @@ async function sendDailySummary() {
 }
 
 async function sendWeeklySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name,status');
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
   for (const u of users || []) {
+    if (u.status === 'inactive') continue;
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
     const weekExp = txs.filter(t => t.type === 'expense' && new Date(t.date) >= start).reduce((a, t) => a + (parseFloat(t.amount) || 0), 0);
@@ -621,10 +624,11 @@ async function sendWeeklySummary() {
 }
 
 async function sendMonthlySummary() {
-  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name');
+  const { data: users } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,name,status');
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   for (const u of users || []) {
+    if (u.status === 'inactive') continue;
     const d = await getUserData(u.id);
     const txs = d.transactions || [];
     const monthExp = txs.filter(t => t.type === 'expense' && new Date(t.date) >= start).reduce((a, t) => a + (parseFloat(t.amount) || 0), 0);
