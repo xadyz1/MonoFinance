@@ -8,6 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 const Stripe = require('stripe');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -736,15 +737,91 @@ seedInitialData().catch(console.error);
 
 // Chatwoot Webhook
 app.post('/api/webhook/chatwoot', async (req, res) => {
-  // Validação simples de segurança (O URL no Chatwoot deve ter ?secret=TUA_SENHA)
+  // 1. Validação de Segurança
   const secret = req.query.secret;
   if (secret !== process.env.WEBHOOK_SECRET) {
     return res.status(401).send('Não autorizado');
   }
 
   const payload = req.body;
-  // ... resto do código de processamento da RPC e Ollama que já temos ...
-  res.status(200).send('OK');
+
+  // 2. Evitar loop infinito (ignorar mensagens do próprio bot)
+  if (payload.event !== 'message_created' || payload.message_type !== 'incoming') {
+    return res.status(200).send('Ignorado - Não é mensagem de utilizador');
+  }
+
+  // Responder logo ao Chatwoot para evitar timeout do webhook
+  res.status(200).send('Recebido');
+
+  try {
+    const pergunta = payload.content;
+    const conversationId = payload.conversation.id;
+    const accountId = payload.account.id;
+    const userId = payload.sender?.custom_attributes?.user_id;
+
+    if (!userId) {
+      console.warn("Utilizador não identificado no Chatwoot.");
+      return;
+    }
+
+    // 3. Inicializar Clientes (Usa a SERVICE_ROLE do Supabase aqui)
+    // (Nota para o agente: assume que createClient do @supabase/supabase-js está disponível)
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const openai = new OpenAI({
+      baseURL: process.env.OPEN_WEBUI_URL,
+      apiKey: process.env.OPEN_WEBUI_API_KEY,
+    });
+
+    // 4. Buscar Resumo Financeiro (RPC)
+    const dataAtual = new Date();
+    const { data: resumo, error } = await supabaseAdmin.rpc('get_financial_summary', {
+      p_user_id: userId,
+      p_month: dataAtual.getMonth() + 1,
+      p_year: dataAtual.getFullYear()
+    });
+
+    if (error) throw error;
+
+    // 5. Construir Contexto e Chamar LLM
+    const promptSistema = `
+      És o assistente financeiro IA do SwiftFinance. 
+      Baseia-te EXCLUSIVAMENTE nos dados deste mês do utilizador:
+      - Despesas Totais: ${resumo.total_expenses} ${resumo.currency}
+      - Rendimentos Totais: ${resumo.total_income} ${resumo.currency}
+      - Saldo Atual: ${resumo.balance} ${resumo.currency}
+      Responde de forma concisa e útil usando markdown.
+    `;
+
+    const llmResponse = await openai.chat.completions.create({
+      model: "llama-3.2:latest", // O modelo configurado no Coolify
+      messages: [
+        { role: "system", content: promptSistema },
+        { role: "user", content: pergunta }
+      ]
+    });
+
+    const respostaTexto = llmResponse.choices[0].message.content;
+
+    // 6. Enviar resposta de volta ao Chatwoot
+    const urlChatwoot = `${process.env.CHATWOOT_BASE_URL}/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`;
+    
+    // (Nota para o agente: Usa o fetch nativo do Node 18+)
+    await fetch(urlChatwoot, {
+      method: 'POST',
+      headers: {
+        'api_access_token': process.env.CHATWOOT_BOT_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content: respostaTexto, message_type: 'outgoing' })
+    });
+
+  } catch (error) {
+    console.error("Erro no processamento do Bot:", error);
+  }
 });
 
 // Static & SPA
