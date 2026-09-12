@@ -79,9 +79,11 @@
       const data = await res.json();
       if (data.active && data.html) {
         const slot = document.getElementById('landing-ad-slot');
+        const labelEl = document.querySelector('#landing-ad-section .ad-label span');
         if (slot) {
           slot.innerHTML = data.html;
           document.getElementById('landing-ad-section').hidden = false;
+          if (labelEl) labelEl.textContent = current === 'en' ? 'Advertising' : 'Publicidade';
         }
       }
     } catch (e) { console.error('ads', e); }

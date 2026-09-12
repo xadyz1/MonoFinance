@@ -52,7 +52,7 @@ async function backend(t, failTable = null, options = {}) {
       return require(name);
     },
     process: { env: { BUNNY_STORAGE_ENDPOINT: 'https://storage.example/zone/', BUNNY_PULL_ZONE: 'https://cdn.example/', BUNNY_API_KEY: 'test', STRIPE_SECRET_KEY: 'sk_test_mock', STRIPE_WEBHOOK_SECRET: 'whsec_mock', APP_URL: 'https://finance.example/' } },
-    __dirname: root, Buffer, console: { log() {}, error() {} },
+    __dirname: root, Buffer, console: { log() {}, warn() {}, error() {} },
     fetch: async url => { calls.push({ upload: url }); return { ok: true, status: 201 }; }
   });
   const source = read('server.js').replace('seedInitialData().catch(console.error);', '')

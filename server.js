@@ -23,7 +23,6 @@ const transporter = process.env.SMTP_HOST ? nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 }) : null;
 
-// Stripe signature verification requires the original bytes, before JSON parsing.
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -270,12 +269,54 @@ app.get('/api/receipts/:transactionId', requireAuth, async (req, res) => {
 
 // Admin: Users
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
-  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,created_at');
+  const { data, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,status,created_at');
   if (error) {
     console.error('[API /api/admin/users] Supabase error:', error);
     return res.status(500).json({ message: 'Erro ao carregar utilizadores' });
   }
   res.json({ users: data || [] });
+});
+
+app.get('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  const { data: user, error: userError } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id,email,role,name,plan_id,status,created_at').eq('id', req.params.id).single();
+  if (userError || !user) return res.status(404).json({ message: 'Utilizador não encontrado' });
+  const { data: subscriptions, error: subError } = await supabase.schema('swiftfinance').from('swiftfinance_subscriptions')
+    .select('*, swiftfinance_plans(*)').eq('user_id', req.params.id).order('created_at', { ascending: false });
+  if (subError) console.error('[API /api/admin/users/:id] Subscription error:', subError);
+  res.json({ user, subscriptions: subscriptions || [] });
+});
+
+app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  const { name, email, status, plan_id } = req.body || {};
+  const id = parseInt(req.params.id);
+  if (id === req.session.userId && status === 'inactive') return res.status(400).json({ message: 'Não pode desativar a si mesmo' });
+  const updates = {};
+  if (typeof name === 'string') updates.name = name;
+  if (typeof email === 'string') updates.email = email.toLowerCase();
+  if (['active', 'inactive'].includes(status)) updates.status = status;
+  if (plan_id === null || Number.isInteger(plan_id)) updates.plan_id = plan_id;
+  const { error } = await supabase.schema('swiftfinance').from('swiftfinance_users').update(updates).eq('id', id);
+  if (error) {
+    console.error('[API /api/admin/users/:id] Update error:', error);
+    return res.status(500).json({ message: 'Erro ao atualizar utilizador' });
+  }
+  res.json({ message: 'OK' });
+});
+
+app.post('/api/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
+  const { password } = req.body || {};
+  if (typeof password !== 'string' || password.length < 4) return res.status(400).json({ message: 'A password deve ter pelo menos 4 caracteres' });
+  const { data: user } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('email,name').eq('id', req.params.id).single();
+  if (!user) return res.status(404).json({ message: 'Utilizador não encontrado' });
+  const hash = bcrypt.hashSync(password, 10);
+  const { error } = await supabase.schema('swiftfinance').from('swiftfinance_users').update({ password_hash: hash }).eq('id', req.params.id);
+  if (error) return res.status(500).json({ message: 'Erro ao atualizar password' });
+  const html = buildEmailTemplate('Password SwiftFinance atualizada', 'A password da sua conta SwiftFinance foi atualizada por um administrador. Pode agora iniciar sessão com a nova password.', [
+    { label: 'Email', value: user.email },
+    { label: 'Nova password', value: password }
+  ], process.env.APP_URL || '/', 'Iniciar sessão', user.name || user.email);
+  sendEmail(user.email, 'Password SwiftFinance atualizada', html);
+  res.json({ message: 'Password atualizada e email enviado' });
 });
 
 app.post('/api/admin/user', requireAdmin, async (req, res) => {
@@ -369,12 +410,18 @@ app.get('/api/admin/plans/:id', requireAdmin, async (req, res) => {
 
 // Stripe
 app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
-  if (!stripe) return res.status(500).json({ message: 'Stripe não configurado' });
+  console.log('[API checkout] Request body:', req.body, 'session:', req.session?.userId);
+  if (!stripe) {
+    console.error('[API checkout] Stripe not configured');
+    return res.status(500).json({ message: 'Stripe não configurado' });
+  }
   const { priceId } = req.body || {};
   if (typeof priceId !== 'string' || !/^price_[a-zA-Z0-9]+$/.test(priceId)) {
+    console.warn('[API checkout] Invalid priceId:', priceId);
     return res.status(400).json({ message: 'Preço Stripe inválido' });
   }
   const { data: plan, error } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').eq('stripe_price_id', priceId).eq('active', true).maybeSingle();
+  console.log('[API checkout] Plan lookup:', { plan: plan?.id, error });
   if (error) return res.status(500).json({ message: 'Erro ao consultar o plano' });
   if (!plan) return res.status(404).json({ message: 'Plano não encontrado' });
   if (Number(plan.price) <= 0) return res.status(400).json({ message: 'Este plano não necessita de pagamento' });
@@ -388,9 +435,10 @@ app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
       client_reference_id: String(req.session.userId),
       metadata: { userId: String(req.session.userId), planId: String(plan.id) }
     });
+    console.log('[API checkout] Session created:', session.id);
     res.json({ sessionId: session.id, url: session.url });
   } catch (e) {
-    console.error('[API checkout] Stripe error:', e.type, e.code);
+    console.error('[API checkout] Stripe error:', e.type, e.code, e.message);
     res.status(502).json({ message: 'Não foi possível iniciar o pagamento. Verifique a configuração do preço e da conta Stripe.' });
   }
 });

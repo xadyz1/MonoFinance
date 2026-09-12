@@ -38,6 +38,9 @@ test('ad sections precede the final CTA and sit outside the welcome card', () =>
   const landing = read('index.html');
   assert.ok(landing.indexOf('id="landing-ad-section"') < landing.indexOf('<section class="final">'));
   assert.equal(landing.split('id="landing-ad-slot"').length - 1, 1);
+  assert.match(landing, /<section id="landing-ad-section"[^>]*class="ad-section"/);
+  assert.match(landing, /<div class="ad-card">/);
+  assert.match(landing, /<div class="ad-label">/);
   assert.doesNotMatch(landing + read('landing.js'), /buy-button\.js|buy_btn_swiftfinance_|pk_live_REPLACE/);
   const app = read('app.html');
   assert.match(app, /<\/div>\s*<\/div>\s*<section id="dashboard-ad-section" class="hidden w-full min-w-0"/);

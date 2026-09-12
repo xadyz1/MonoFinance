@@ -5811,7 +5811,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const displayName = u.name || u.email || u.username || 'Utilizador #' + u.id;
                 const div = document.createElement('div');
                 div.className = 'flex items-center justify-between bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2';
-                div.innerHTML = '<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-brand-textSecondary">person</span><span class="text-xs text-white">' + displayName + '</span><span class="text-[9px] px-1.5 py-0.5 rounded-full ' + (u.role === 'admin' ? 'bg-brand-accentDim text-brand-accent' : 'bg-[#202024] text-brand-textSecondary') + '">' + (u.role || 'user') + '</span></div><div class="flex gap-1"><button class="adm-role-btn text-[9px] px-2 py-1 rounded-lg bg-[#202024] text-brand-textSecondary hover:text-white" data-id="' + u.id + '" data-role="' + u.role + '">' + (u.role === 'admin' ? 'Rebaixar' : 'Promover') + '</button><button class="adm-del-btn text-[9px] px-2 py-1 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50" data-id="' + u.id + '">Eliminar</button></div>';
+                div.innerHTML = '<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-brand-textSecondary">person</span><span class="text-xs text-white cursor-pointer hover:text-brand-accent adm-user-name" data-id="' + u.id + '">' + displayName + '</span><span class="text-[9px] px-1.5 py-0.5 rounded-full ' + (u.role === 'admin' ? 'bg-brand-accentDim text-brand-accent' : 'bg-[#202024] text-brand-textSecondary') + '">' + (u.role || 'user') + '</span>' + (u.status === 'inactive' ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-400">inativo</span>' : '') + '</div><div class="flex gap-1"><button class="adm-role-btn text-[9px] px-2 py-1 rounded-lg bg-[#202024] text-brand-textSecondary hover:text-white" data-id="' + u.id + '" data-role="' + u.role + '">' + (u.role === 'admin' ? 'Rebaixar' : 'Promover') + '</button><button class="adm-del-btn text-[9px] px-2 py-1 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50" data-id="' + u.id + '">Eliminar</button></div>';
                 listEl.appendChild(div);
             });
             listEl.querySelectorAll('.adm-role-btn').forEach(btn => {
@@ -5827,8 +5827,82 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadAdminUsers();
                 };
             });
+            listEl.querySelectorAll('.adm-user-name').forEach(span => {
+                span.onclick = () => openAdminUserModal(span.dataset.id);
+            });
         } catch (e) { listEl.innerHTML = '<p class="text-xs text-red-400">Erro ao carregar</p>'; }
     };
+
+    // Admin: user profile modal
+    const adminUserModal = document.getElementById('admin-user-modal');
+    const closeAdminUserModalBtn = document.getElementById('close-admin-user-modal');
+    if (closeAdminUserModalBtn) closeAdminUserModalBtn.addEventListener('click', () => { if (adminUserModal) adminUserModal.classList.add('hidden'); });
+    if (adminUserModal) adminUserModal.addEventListener('click', e => { if (e.target === adminUserModal) adminUserModal.classList.add('hidden'); });
+
+    async function loadAdminPlansForDropdown() {
+        const select = document.getElementById('admin-user-plan');
+        if (!select) return;
+        try {
+            const res = await fetch(getApiUrl('api/admin/plans'), { credentials: 'same-origin' });
+            const data = await res.json();
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Sem plano</option>' + (data.plans || []).map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('');
+            select.value = currentValue;
+        } catch {}
+    }
+
+    window.openAdminUserModal = async function (userId) {
+        if (!adminUserModal) return;
+        await loadAdminPlansForDropdown();
+        try {
+            const res = await fetch(getApiUrl('api/admin/users/' + userId), { credentials: 'same-origin' });
+            const data = await res.json();
+            if (!res.ok) { showToast(data.message || 'Erro', 'error'); return; }
+            document.getElementById('admin-user-id').value = data.user.id;
+            document.getElementById('admin-user-name').value = data.user.name || '';
+            document.getElementById('admin-user-email').value = data.user.email || '';
+            document.getElementById('admin-user-status').value = data.user.status === 'inactive' ? 'inactive' : 'active';
+            document.getElementById('admin-user-plan').value = data.user.plan_id || '';
+            const subsBody = document.getElementById('admin-user-subs');
+            subsBody.innerHTML = (data.subscriptions || []).length ? data.subscriptions.map(s => {
+                const planName = s.swiftfinance_plans?.name || '-';
+                const start = s.created_at ? new Date(s.created_at).toLocaleDateString('pt-PT') : '-';
+                const end = s.current_period_end ? new Date(s.current_period_end).toLocaleDateString('pt-PT') : '-';
+                return '<tr class="border-t border-[#202024]"><td class="px-3 py-2">' + planName + '</td><td class="px-3 py-2">' + (s.status || '-') + '</td><td class="px-3 py-2">' + start + '</td><td class="px-3 py-2">' + end + '</td></tr>';
+            }).join('') : '<tr><td colspan="4" class="px-3 py-2 text-brand-textSecondary">Sem histórico</td></tr>';
+            adminUserModal.classList.remove('hidden');
+        } catch { showToast('Erro ao abrir perfil', 'error'); }
+    };
+
+    const adminUserForm = document.getElementById('admin-user-form');
+    if (adminUserForm) adminUserForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('admin-user-id').value;
+        const payload = {
+            name: document.getElementById('admin-user-name').value.trim(),
+            email: document.getElementById('admin-user-email').value.trim(),
+            status: document.getElementById('admin-user-status').value,
+            plan_id: document.getElementById('admin-user-plan').value ? parseInt(document.getElementById('admin-user-plan').value) : null
+        };
+        try {
+            const res = await fetch(getApiUrl('api/admin/users/' + id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+            const data = await res.json();
+            showToast(data.message || 'Guardado', res.ok ? 'success' : 'error');
+            if (res.ok) { loadAdminUsers(); }
+        } catch { showToast('Erro ao guardar', 'error'); }
+    });
+
+    const adminUserResetBtn = document.getElementById('admin-user-reset-btn');
+    if (adminUserResetBtn) adminUserResetBtn.addEventListener('click', async () => {
+        const id = document.getElementById('admin-user-id').value;
+        const password = prompt('Nova password (mín. 4 caracteres):');
+        if (!password || password.length < 4) { showToast('Password inválida', 'error'); return; }
+        try {
+            const res = await fetch(getApiUrl('api/admin/users/' + id + '/reset-password'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ password }) });
+            const data = await res.json();
+            showToast(data.message || 'Feito', res.ok ? 'success' : 'error');
+        } catch { showToast('Erro ao repor password', 'error'); }
+    });
 
     // Admin: create user form
     const adminCreateForm = document.getElementById('admin-create-user-form');

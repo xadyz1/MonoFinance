@@ -1997,6 +1997,61 @@
                 <div id="admin-users-list" class="space-y-2"></div>
             </div>
 
+            <!-- User Profile Modal -->
+            <div id="admin-user-modal" class="modal-overlay hidden">
+                <div class="modal bg-[#111113] border border-[#202024] p-6 rounded-3xl max-w-2xl w-full space-y-4" style="max-height:85vh;overflow-y:auto">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold text-lg text-white">Perfil do utilizador</h3>
+                        <button id="close-admin-user-modal" class="text-brand-textSecondary hover:text-white" title="Fechar"><span class="material-symbols-outlined text-[20px]">close</span></button>
+                    </div>
+                    <form id="admin-user-form" class="space-y-3">
+                        <input type="hidden" id="admin-user-id">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-brand-textSecondary mb-1">Nome</label>
+                                <input id="admin-user-name" type="text" class="w-full bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2 text-xs text-white" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-brand-textSecondary mb-1">Email</label>
+                                <input id="admin-user-email" type="email" class="w-full bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2 text-xs text-white" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-brand-textSecondary mb-1">Plano</label>
+                                <select id="admin-user-plan" class="w-full bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2 text-xs text-white">
+                                    <option value="">Sem plano</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-brand-textSecondary mb-1">Estado</label>
+                                <select id="admin-user-status" class="w-full bg-[#0A0A0C] border border-[#202024] rounded-xl px-3 py-2 text-xs text-white">
+                                    <option value="active">Ativo</option>
+                                    <option value="inactive">Inativo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 pt-2">
+                            <button type="submit" class="bg-brand-purple hover:opacity-90 text-white font-semibold py-2 px-4 rounded-xl text-xs">Guardar alterações</button>
+                            <div class="flex gap-2">
+                                <button type="button" id="admin-user-reset-btn" class="bg-[#202024] hover:bg-[#2A2A2E] text-white font-semibold py-2 px-3 rounded-xl text-xs">Enviar email de reposição</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div>
+                        <h4 class="text-sm font-semibold text-white mb-2">Histórico de subscrições</h4>
+                        <div class="overflow-x-auto rounded-xl border border-[#202024]">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-[#0A0A0C] text-brand-textSecondary">
+                                    <tr><th class="px-3 py-2">Plano</th><th class="px-3 py-2">Estado</th><th class="px-3 py-2">Início</th><th class="px-3 py-2">Fim</th></tr>
+                                </thead>
+                                <tbody id="admin-user-subs" class="text-white"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Plans tab -->
             <div id="admin-tab-plans" class="admin-tab space-y-3 hidden">
                 <form id="admin-plan-form" class="space-y-2">
