@@ -824,6 +824,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Check auth status
+    function initChatwootWidget(userData) {
+        if (window.$chatwoot) return; // Already initialized
+
+        (function(d,t) {
+            var BASE_URL="https://chat.swiftapps.cloud";
+            var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+            g.src=BASE_URL+"/packs/js/sdk.js";
+            g.defer = true;
+            g.async = true;
+            s.parentNode.insertBefore(g,s);
+            g.onload=function(){
+                window.chatwootSDK.run({
+                    websiteToken: 'GjLzCuyvpHas5Ua6ZhDTk2os',
+                    baseUrl: BASE_URL
+                });
+            }
+        })(document,"script");
+
+        window.addEventListener("chatwoot:ready", function () {
+            if (window.$chatwoot && userData && userData.id) {
+                window.$chatwoot.setUser(userData.id, {
+                    email: userData.email || '',
+                    name: userData.name || userData.username || 'Utilizador',
+                    user_id: userData.id
+                });
+            }
+        });
+    }
+
     async function checkAuth() {
         try {
             const response = await fetch(getApiUrl('api/me'), { credentials: 'same-origin' });
@@ -837,10 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDemoMode = false;
 
                 // Chatwoot Auth Integration
-                window.currentUserData = data;
-                if (typeof window.identifyChatwootUser === 'function') {
-                    window.identifyChatwootUser(data);
-                }
+                initChatwootWidget(data);
 
                 // Smooth UI transition
                 showAppScreenSmoothly();

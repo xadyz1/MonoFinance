@@ -2256,42 +2256,6 @@
     </div>
 
 
-    <!-- Chatwoot Widget -->
-    <script>
-        // 1. Carregar o script do Chatwoot
-        (function(d,t) {
-            var BASE_URL="https://chat.swiftapps.cloud";
-            var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-            g.src=BASE_URL+"/packs/js/sdk.js";
-            g.defer = true;
-            g.async = true;
-            s.parentNode.insertBefore(g,s);
-            g.onload=function(){
-                window.chatwootSDK.run({
-                    websiteToken: 'GjLzCuyvpHas5Ua6ZhDTk2os',
-                    baseUrl: BASE_URL
-                });
-            }
-        })(document,"script");
-
-        // 2. Injetar a identidade quando o utilizador estiver autenticado
-        window.identifyChatwootUser = function(user) {
-            if (window.$chatwoot && user && user.id) {
-                window.$chatwoot.setUser(user.id, {
-                    email: user.email || '',
-                    name: user.name || user.username || 'Utilizador',
-                    user_id: user.id // O webhook vai ler este atributo exato
-                });
-            }
-        };
-
-        window.addEventListener("chatwoot:ready", function () {
-            // Caso os dados do utilizador já tenham sido carregados no app.js
-            if (window.currentUserData) {
-                window.identifyChatwootUser(window.currentUserData);
-            }
-        });
-    </script>
 </body>
 
 </html>
