@@ -156,7 +156,7 @@ app.get('/api/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ message: 'Não autenticado' });
   const { data: u, error } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('email,role,name,avatar_url,plan_id').eq('id', req.session.userId).single();
   if (error || !u) return res.status(500).json({ message: 'Erro ao carregar perfil' });
-  res.json({ username: req.session.username, role: u?.role || 'user', name: u?.name || '', avatar_url: u?.avatar_url || '', plan_id: u?.plan_id || null });
+  res.json({ id: req.session.userId, email: u?.email || '', username: req.session.username, role: u?.role || 'user', name: u?.name || '', avatar_url: u?.avatar_url || '', plan_id: u?.plan_id || null });
 });
 
 app.post('/api/change-password', requireAuth, async (req, res) => {
@@ -733,6 +733,19 @@ async function seedInitialData() {
   }
 }
 seedInitialData().catch(console.error);
+
+// Chatwoot Webhook
+app.post('/api/webhook/chatwoot', async (req, res) => {
+  // Validação simples de segurança (O URL no Chatwoot deve ter ?secret=TUA_SENHA)
+  const secret = req.query.secret;
+  if (secret !== process.env.WEBHOOK_SECRET) {
+    return res.status(401).send('Não autorizado');
+  }
+
+  const payload = req.body;
+  // ... resto do código de processamento da RPC e Ollama que já temos ...
+  res.status(200).send('OK');
+});
 
 // Static & SPA
 app.all('/api/*', (req, res) => res.status(404).json({ message: 'Não encontrado' }));
