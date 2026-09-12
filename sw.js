@@ -1,11 +1,13 @@
 // SwiftFinance PWA Service Worker
-const CACHE_NAME = 'swiftfinance-pwa-v81';
+const CACHE_NAME = 'swiftfinance-pwa-v82';
 const ASSETS_TO_CACHE = [
   './',
   './app',
-  './styles.css?v=114',
-  './app.js?v=136',
-  './landing.js?v=2',
+  './styles.css?v=115',
+  './app.js?v=137',
+  './landing.js?v=3',
+  './dashboard.js?v=3',
+  './receipt-preview.js?v=1',
   './manifest.json',
   './favicon.svg',
   './favicon.png',

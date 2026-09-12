@@ -199,14 +199,15 @@
       const errBox = $('error');
       errBox.style.display = 'none';
       try {
-        const res = await fetch('api/login', {
+        const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          window.location.href = '/app';
+          const checkoutPrice = new URLSearchParams(window.location.search).get('checkout');
+          window.location.href = checkoutPrice ? '/?checkout=' + encodeURIComponent(checkoutPrice) + '#pricing' : '/app';
           return;
         }
         errBox.textContent = 'Nome de utilizador ou password incorretos.';

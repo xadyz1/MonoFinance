@@ -8,7 +8,10 @@
       const data = await res.json();
       if (data.active && data.html) {
         const slot = document.getElementById('dashboard-ad-slot');
-        if (slot) slot.innerHTML = data.html;
+        if (slot) {
+          slot.innerHTML = data.html;
+          document.getElementById('dashboard-ad-section').classList.remove('hidden');
+        }
       }
     } catch (e) { console.error('dashboard ad', e); }
   }

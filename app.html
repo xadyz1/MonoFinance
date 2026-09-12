@@ -14,7 +14,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=114">
+    <link rel="stylesheet" href="styles.css?v=115">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="manifest" href="manifest.json">
@@ -189,8 +189,11 @@
                             <p class="text-xs text-brand-textSecondary mb-0.5">Bem-vindo de volta</p>
                             <h2 id="welcome-name" class="font-outfit font-bold text-xl sm:text-2xl text-white truncate">Utilizador</h2>
                         </div>
-                        <div id="dashboard-ad-slot" class="max-w-[300px]"></div>
                     </div>
+
+                    <section id="dashboard-ad-section" class="hidden w-full min-w-0" aria-label="Publicidade">
+                        <div id="dashboard-ad-slot" class="w-full overflow-hidden rounded-3xl"></div>
+                    </section>
 
                     <!-- Metric Cards row -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
@@ -2031,8 +2034,22 @@
         </div>
     </div>
 
-    <script src="app.js?v=136" defer></script>
-<script src="dashboard.js?v=2" defer></script>
+    <div id="receipt-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title" aria-hidden="true">
+        <div class="modal bg-[#111113] border border-[#202024] rounded-3xl p-4 sm:p-6 w-full max-w-4xl flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <h3 id="receipt-preview-title" class="font-semibold text-lg text-white">Anexo da transação</h3>
+                <button id="close-receipt-preview" type="button" class="text-brand-textSecondary hover:text-white" aria-label="Fechar anexo">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="receipt-preview-content" class="min-h-0 flex-1 overflow-auto"></div>
+            <p id="receipt-preview-status" class="text-xs text-brand-textSecondary" role="status"></p>
+            <a id="receipt-preview-external" target="_blank" rel="noopener noreferrer" class="text-sm text-brand-accent hover:underline">Abrir ficheiro noutra janela</a>
+        </div>
+    </div>
+    <script src="app.js?v=137" defer></script>
+    <script src="receipt-preview.js?v=1" defer></script>
+    <script src="dashboard.js?v=3" defer></script>
     <!-- Stripe Checkout Modal -->
     <div id="stripe-modal" class="modal-overlay" style="z-index: 200;">
         <div class="modal bg-[#111113] border border-[#202024] p-0 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden" style="max-height:90vh;">

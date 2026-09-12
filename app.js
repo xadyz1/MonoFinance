@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (!['https:', 'http:'].includes(new URL(url, window.location.origin).protocol)) return '';
         } catch { return ''; }
-        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="ml-1.5 shrink-0 text-brand-accent hover:text-white transition-colors" title="Ver recibo" aria-label="Ver recibo"><span class="material-symbols-outlined text-[14px]">receipt</span></a>`;
+        return `<a href="${escapeHtml(url)}" data-receipt-preview target="_blank" rel="noopener noreferrer" class="ml-1.5 shrink-0 text-brand-accent hover:text-white transition-colors" title="Ver recibo" aria-label="Ver recibo" aria-haspopup="dialog"><span class="material-symbols-outlined text-[14px]">receipt</span></a>`;
     };
 
     // Auth and Sync state variables

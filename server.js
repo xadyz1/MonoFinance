@@ -23,6 +23,8 @@ const transporter = process.env.SMTP_HOST ? nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 }) : null;
 
+// Stripe signature verification requires the original bytes, before JSON parsing.
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -369,19 +371,28 @@ app.get('/api/admin/plans/:id', requireAdmin, async (req, res) => {
 app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
   if (!stripe) return res.status(500).json({ message: 'Stripe não configurado' });
   const { priceId } = req.body || {};
-  const { data: plan } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').eq('stripe_price_id', priceId).single();
+  if (typeof priceId !== 'string' || !/^price_[a-zA-Z0-9]+$/.test(priceId)) {
+    return res.status(400).json({ message: 'Preço Stripe inválido' });
+  }
+  const { data: plan, error } = await supabase.schema('swiftfinance').from('swiftfinance_plans').select('*').eq('stripe_price_id', priceId).eq('active', true).maybeSingle();
+  if (error) return res.status(500).json({ message: 'Erro ao consultar o plano' });
   if (!plan) return res.status(404).json({ message: 'Plano não encontrado' });
+  if (Number(plan.price) <= 0) return res.status(400).json({ message: 'Este plano não necessita de pagamento' });
   try {
+    const appUrl = (process.env.APP_URL || 'http://localhost:5001').replace(/\/+$/, '');
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.APP_URL || 'http://localhost:5001'}/app.html?subscribed=1`,
-      cancel_url: `${process.env.APP_URL || 'http://localhost:5001'}/`,
+      success_url: `${appUrl}/app?subscribed=1`,
+      cancel_url: `${appUrl}/#pricing`,
       client_reference_id: String(req.session.userId),
       metadata: { userId: String(req.session.userId), planId: String(plan.id) }
     });
     res.json({ sessionId: session.id, url: session.url });
-  } catch (e) { res.status(500).json({ message: e.message }); }
+  } catch (e) {
+    console.error('[API checkout] Stripe error:', e.type, e.code);
+    res.status(502).json({ message: 'Não foi possível iniciar o pagamento. Verifique a configuração do preço e da conta Stripe.' });
+  }
 });
 
 app.get('/api/subscription', requireAuth, async (req, res) => {

@@ -9,7 +9,7 @@ const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const appSource = read('app.js');
 
 // Exercise the real Express routes with an isolated database/storage adapter.
-async function backend(t, failTable = null) {
+async function backend(t, failTable = null, options = {}) {
   const calls = [];
   const user = { id: 7, email: 'test@example.com', name: 'Ana', role: 'admin', avatar_url: 'https://cdn.example/avatar.png' };
   const tx = { id: '1789000000000', receipt_url: 'https://cdn.example/receipt.pdf' };
@@ -27,7 +27,8 @@ async function backend(t, failTable = null) {
     for (const method of ['select', 'single', 'maybeSingle', 'order', 'limit', 'ilike']) query[method] = () => query;
     query.eq = (key, value) => { call.filters.push([key, value]); return query; };
     for (const method of ['insert', 'update', 'delete']) query[method] = payload => { call.method = method; call.payload = payload; return query; };
-    query.then = resolve => resolve({ data: table === failTable ? null : rows[table], error: table === failTable ? { message: 'Simulated database failure' } : null });
+    query.single = query.maybeSingle = () => { call.single = true; return query; };
+    query.then = resolve => resolve({ data: table === failTable ? null : (table === 'swiftfinance_plans' && call.single ? (options.noPlan ? null : rows[table][0]) : rows[table]), error: table === failTable ? { message: 'Simulated database failure' } : null });
     return query;
   } }) };
   const context = vm.createContext({
@@ -35,10 +36,22 @@ async function backend(t, failTable = null) {
       if (name === 'dotenv') return { config() {} };
       if (name === '@supabase/supabase-js') return { createClient: () => supabase };
       if (name === 'node-cron') return { schedule() {} };
-      if (name === 'express-session') return () => (req, res, next) => { req.session = { userId: 7, username: user.email }; next(); };
+      if (name === 'stripe') return () => ({
+        checkout: { sessions: { create: async payload => {
+          calls.push({ checkout: payload });
+          if (options.stripeError) throw new Error('Simulated Stripe error');
+          return { id: 'cs_test_123', url: 'https://checkout.stripe.com/c/pay/cs_test_123' };
+        } } },
+        webhooks: { constructEvent: body => {
+          assert.ok(Buffer.isBuffer(body));
+          calls.push({ webhookBody: body.toString() });
+          return { type: 'test.event' };
+        } }
+      });
+      if (name === 'express-session') return () => (req, res, next) => { req.session = options.unauthenticated ? {} : { userId: 7, username: user.email }; next(); };
       return require(name);
     },
-    process: { env: { BUNNY_STORAGE_ENDPOINT: 'https://storage.example/zone/', BUNNY_PULL_ZONE: 'https://cdn.example/', BUNNY_API_KEY: 'test' } },
+    process: { env: { BUNNY_STORAGE_ENDPOINT: 'https://storage.example/zone/', BUNNY_PULL_ZONE: 'https://cdn.example/', BUNNY_API_KEY: 'test', STRIPE_SECRET_KEY: 'sk_test_mock', STRIPE_WEBHOOK_SECRET: 'whsec_mock', APP_URL: 'https://finance.example/' } },
     __dirname: root, Buffer, console: { log() {}, error() {} },
     fetch: async url => { calls.push({ upload: url }); return { ok: true, status: 201 }; }
   });
@@ -142,8 +155,8 @@ test('receipt links reject executable URLs and remain separate from truncated de
 test('landing renders stored plans with JSON features and escapes their text', async () => {
   const grid = { innerHTML: '' };
   const modal = { addEventListener() {} };
-  const context = vm.createContext({ console, window: { location: { origin: 'https://app.example' } },
-    document: { getElementById: id => id === 'plans-grid' ? grid : modal, querySelectorAll: () => [] },
+  const context = vm.createContext({ console, URLSearchParams, window: { location: { origin: 'https://app.example', search: '' } },
+    document: { getElementById: id => id === 'plans-grid' ? grid : modal, querySelectorAll: () => [], addEventListener() {} },
     fetch: async url => ({ ok: true, json: async () => url.endsWith('/api/plans') ? { plans: [
       { name: 'Plano existente', price: '4.99', features: ['<script>unsafe</script>'], active: true },
       { name: 'Inativo', price: 0, active: false }
@@ -161,10 +174,49 @@ test('HTML labels and cache versions are consistent; API data is never cached', 
   const html = read('app.html');
   const sw = read('sw.js');
   assert.doesNotMatch(html, /[\u0400-\u04ff]/);
-  for (const asset of ['app.js?v=136', 'styles.css?v=114']) {
+  for (const asset of ['app.js?v=137', 'styles.css?v=115', 'receipt-preview.js?v=1', 'dashboard.js?v=3']) {
     assert.ok(html.includes(asset));
     assert.ok(sw.includes(asset));
   }
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   assert.ok(appSource.includes("method: payload.id ? 'PUT' : 'POST'"));
+});
+
+test('checkout uses a server-created Stripe session and clean return URLs', async t => {
+  const { request, calls } = await backend(t);
+  const response = await request('/api/create-checkout-session', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ priceId: 'price_real123' })
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).url, 'https://checkout.stripe.com/c/pay/cs_test_123');
+  const { checkout } = calls.find(c => c.checkout);
+  assert.equal(checkout.line_items[0].price, 'price_real123');
+  assert.equal(checkout.success_url, 'https://finance.example/app?subscribed=1');
+  assert.equal(checkout.cancel_url, 'https://finance.example/#pricing');
+  assert.equal(checkout.client_reference_id, '7');
+  assert.equal(checkout.metadata.planId, '1');
+  assert.ok(calls.find(c => c.table === 'swiftfinance_plans').filters.some(([key, value]) => key === 'active' && value === true));
+});
+
+test('checkout handles missing authentication, invalid plans and Stripe failures', async t => {
+  for (const [options, priceId, expected] of [
+    [{ unauthenticated: true }, 'price_real123', 401],
+    [{}, '', 400],
+    [{ noPlan: true }, 'price_missing123', 404],
+    [{ stripeError: true }, 'price_real123', 502]
+  ]) {
+    const { request } = await backend(t, null, options);
+    const response = await request('/api/create-checkout-session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ priceId })
+    });
+    assert.equal(response.status, expected);
+  }
+});
+
+test('Stripe webhook receives raw bytes rather than parsed JSON', async t => {
+  const { request, calls } = await backend(t);
+  const body = '{ "type": "test.event" }';
+  const response = await request('/api/stripe/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', 'stripe-signature': 'mock' }, body });
+  assert.equal(response.status, 200);
+  assert.equal(calls.find(c => c.webhookBody).webhookBody, body);
 });

@@ -29,12 +29,47 @@
         const priceId = btn.dataset.priceId;
         const isFree = btn.dataset.free === 'true';
         if (isFree) { window.location.href = '/login'; return; }
-        if (!priceId) return;
-        const container = document.getElementById('stripe-container');
-        container.innerHTML = `<stripe-buy-button buy-button-id="buy_btn_swiftfinance_${Date.now()}" publishable-key="pk_live_REPLACE_WITH_YOUR_KEY" price-id="${priceId}" customer-session-client-secret=""></stripe-buy-button>`;
-        openStripeModal();
+        startCheckout(priceId);
       });
     });
+  }
+
+  let checkoutPending = false;
+  async function startCheckout(priceId) {
+    if (checkoutPending) return;
+    const container = document.getElementById('stripe-container');
+    openStripeModal();
+    container.textContent = 'A preparar o pagamento seguro…';
+    checkoutPending = true;
+    try {
+      if (!priceId) throw new Error('Este plano ainda não tem um preço Stripe configurado.');
+      const res = await fetch(`${API_URL}/api/create-checkout-session`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId })
+      });
+      if (res.status === 401) {
+        window.location.href = '/login?checkout=' + encodeURIComponent(priceId);
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Não foi possível iniciar o pagamento.');
+      const checkoutUrl = new URL(data.url);
+      if (checkoutUrl.protocol !== 'https:' || checkoutUrl.hostname !== 'checkout.stripe.com') {
+        throw new Error('O servidor devolveu um endereço de pagamento inválido.');
+      }
+      window.location.href = checkoutUrl.href;
+    } catch (error) {
+      container.textContent = error.message || 'Não foi possível ligar ao serviço de pagamentos.';
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'btn primary';
+      retry.textContent = 'Tentar novamente';
+      retry.addEventListener('click', () => startCheckout(priceId));
+      container.appendChild(retry);
+    } finally {
+      checkoutPending = false;
+    }
   }
 
   async function fetchAds() {
@@ -44,7 +79,10 @@
       const data = await res.json();
       if (data.active && data.html) {
         const slot = document.getElementById('landing-ad-slot');
-        if (slot) slot.innerHTML = data.html;
+        if (slot) {
+          slot.innerHTML = data.html;
+          document.getElementById('landing-ad-section').hidden = false;
+        }
       }
     } catch (e) { console.error('ads', e); }
   }
@@ -58,7 +96,16 @@
   function closeStripeModal() { stripeModal.classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('closeStripeModal').addEventListener('click', closeStripeModal);
   stripeModal.addEventListener('click', e => { if (e.target === stripeModal) closeStripeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStripeModal(); });
 
   fetchPlans();
   fetchAds();
+  const params = new URLSearchParams(window.location.search);
+  const checkoutPrice = params.get('checkout');
+  if (checkoutPrice) {
+    params.delete('checkout');
+    const query = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (query ? '?' + query : '') + '#pricing');
+    startCheckout(checkoutPrice);
+  }
 })();
