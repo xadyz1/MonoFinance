@@ -29,13 +29,73 @@
         const priceId = btn.dataset.priceId;
         const isFree = btn.dataset.free === 'true';
         if (isFree) { window.location.href = '/login'; return; }
-        startCheckout(priceId);
+        openSubscribeModal(priceId);
       });
     });
   }
 
+  let selectedPriceId = null;
+  function openSubscribeModal(priceId) {
+    selectedPriceId = priceId;
+    const modal = document.getElementById('subscribeModal');
+    const error = document.getElementById('subscribe-error');
+    const nameInput = document.getElementById('subscribe-name');
+    const emailInput = document.getElementById('subscribe-email');
+    if (error) error.textContent = '';
+    if (nameInput) nameInput.value = '';
+    if (emailInput) emailInput.value = '';
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSubscribeModal() {
+    const modal = document.getElementById('subscribeModal');
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  async function startCheckoutFromModal() {
+    if (!selectedPriceId) return;
+    const nameInput = document.getElementById('subscribe-name');
+    const emailInput = document.getElementById('subscribe-email');
+    const error = document.getElementById('subscribe-error');
+    const name = (nameInput?.value || '').trim();
+    const email = (emailInput?.value || '').trim().toLowerCase();
+
+    if (!name || name.length < 2) {
+      if (error) error.textContent = 'Por favor, introduza o seu nome.';
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (error) error.textContent = 'Por favor, introduza um email válido.';
+      return;
+    }
+    if (error) error.textContent = '';
+
+    const payBtn = document.getElementById('subscribe-pay-btn');
+    if (payBtn) { payBtn.disabled = true; payBtn.textContent = 'A processar…'; }
+
+    try {
+      const res = await fetch(`${API_URL}/api/create-checkout-session`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: selectedPriceId, name, email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Não foi possível iniciar o pagamento.');
+      const checkoutUrl = new URL(data.url);
+      if (checkoutUrl.protocol !== 'https:' || checkoutUrl.hostname !== 'checkout.stripe.com') {
+        throw new Error('O servidor devolveu um endereço de pagamento inválido.');
+      }
+      window.location.href = checkoutUrl.href;
+    } catch (err) {
+      if (error) error.textContent = err.message || 'Erro ao iniciar pagamento.';
+      if (payBtn) { payBtn.disabled = false; payBtn.textContent = 'Proceder ao pagamento'; }
+    }
+  }
+
   let checkoutPending = false;
-  async function startCheckout(priceId) {
+  async function resumeCheckout(priceId) {
     if (checkoutPending) return;
     const container = document.getElementById('stripe-container');
     openStripeModal();
@@ -65,7 +125,7 @@
       retry.type = 'button';
       retry.className = 'btn primary';
       retry.textContent = 'Tentar novamente';
-      retry.addEventListener('click', () => startCheckout(priceId));
+      retry.addEventListener('click', () => resumeCheckout(priceId));
       container.appendChild(retry);
     } finally {
       checkoutPending = false;
@@ -93,12 +153,20 @@
     return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 
+  const subscribeModal = document.getElementById('subscribeModal');
+  if (subscribeModal) {
+    document.getElementById('closeSubscribeModal').addEventListener('click', closeSubscribeModal);
+    subscribeModal.addEventListener('click', e => { if (e.target === subscribeModal) closeSubscribeModal(); });
+    document.getElementById('subscribe-pay-btn').addEventListener('click', startCheckoutFromModal);
+    document.getElementById('subscribe-form').addEventListener('submit', e => { e.preventDefault(); startCheckoutFromModal(); });
+  }
+
   const stripeModal = document.getElementById('stripeModal');
   function openStripeModal() { stripeModal.classList.add('open'); document.body.style.overflow = 'hidden'; }
   function closeStripeModal() { stripeModal.classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('closeStripeModal').addEventListener('click', closeStripeModal);
   stripeModal.addEventListener('click', e => { if (e.target === stripeModal) closeStripeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStripeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeStripeModal(); closeSubscribeModal(); } });
 
   fetchPlans();
   fetchAds();
@@ -108,6 +176,6 @@
     params.delete('checkout');
     const query = params.toString();
     window.history.replaceState(null, '', window.location.pathname + (query ? '?' + query : '') + '#pricing');
-    startCheckout(checkoutPrice);
+    resumeCheckout(checkoutPrice);
   }
 })();

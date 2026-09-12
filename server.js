@@ -409,13 +409,13 @@ app.get('/api/admin/plans/:id', requireAdmin, async (req, res) => {
 });
 
 // Stripe
-app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
+app.post('/api/create-checkout-session', async (req, res) => {
   console.log('[API checkout] Request body:', req.body, 'session:', req.session?.userId);
   if (!stripe) {
     console.error('[API checkout] Stripe not configured');
     return res.status(500).json({ message: 'Stripe não configurado' });
   }
-  const { priceId } = req.body || {};
+  const { priceId, name, email } = req.body || {};
   if (typeof priceId !== 'string' || !/^price_[a-zA-Z0-9]+$/.test(priceId)) {
     console.warn('[API checkout] Invalid priceId:', priceId);
     return res.status(400).json({ message: 'Preço Stripe inválido' });
@@ -425,15 +425,57 @@ app.post('/api/create-checkout-session', requireAuth, async (req, res) => {
   if (error) return res.status(500).json({ message: 'Erro ao consultar o plano' });
   if (!plan) return res.status(404).json({ message: 'Plano não encontrado' });
   if (Number(plan.price) <= 0) return res.status(400).json({ message: 'Este plano não necessita de pagamento' });
+
+  let userId = req.session?.userId;
+  let userEmail = email;
+  let userName = name;
+
+  // Anonymous subscription flow: create inactive account from modal data
+  if (!userId && name && email) {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({ message: 'Email inválido' });
+    }
+    if (!name.trim() || name.trim().length < 2) {
+      return res.status(400).json({ message: 'Nome inválido' });
+    }
+    const { data: existing } = await supabase.schema('swiftfinance').from('swiftfinance_users').select('id').ilike('email', cleanEmail).maybeSingle();
+    if (existing) {
+      return res.status(409).json({ message: 'Já existe uma conta com este email. Por favor, inicie sessão.' });
+    }
+    const tempPassword = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 4).toUpperCase();
+    const { data: user, error: createError } = await supabase.schema('swiftfinance').from('swiftfinance_users').insert({
+      email: cleanEmail,
+      password_hash: bcrypt.hashSync(tempPassword, 10),
+      role: 'user',
+      name: name.trim(),
+      status: 'inactive'
+    }).select().single();
+    if (createError || !user) {
+      console.error('[API checkout] User creation error:', createError);
+      return res.status(500).json({ message: 'Erro ao criar conta' });
+    }
+    userId = user.id;
+    userEmail = cleanEmail;
+    userName = name.trim();
+    await getUserData(userId);
+    // Store temp password in checkout metadata for email after successful payment
+    req.session = req.session || {};
+    req.session.pendingSignup = { userId, tempPassword };
+  } else if (!userId) {
+    return res.status(401).json({ message: 'Não autenticado' });
+  }
+
   try {
     const appUrl = (process.env.APP_URL || 'http://localhost:5001').replace(/\/+$/, '');
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/app?subscribed=1`,
+      success_url: `${appUrl}/login?subscribed=1&user=${userId}`,
       cancel_url: `${appUrl}/#pricing`,
-      client_reference_id: String(req.session.userId),
-      metadata: { userId: String(req.session.userId), planId: String(plan.id) }
+      client_reference_id: String(userId),
+      metadata: { userId: String(userId), planId: String(plan.id), email: userEmail || '', name: userName || '' },
+      customer_email: userEmail || undefined
     });
     console.log('[API checkout] Session created:', session.id);
     res.json({ sessionId: session.id, url: session.url });
@@ -468,7 +510,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         status: 'active',
         current_period_end: new Date(Date.now() + 30*24*60*60*1000).toISOString()
       });
-      await supabase.schema('swiftfinance').from('swiftfinance_users').update({ plan_id: planId }).eq('id', userId);
+      await supabase.schema('swiftfinance').from('swiftfinance_users').update({ plan_id: planId, status: 'active' }).eq('id', userId);
+      // Send welcome email with temporary password for new signups
+      const email = s.customer_email || s.metadata?.email;
+      const name = s.metadata?.name;
+      const tempPassword = s.metadata?.tempPassword;
+      const appUrl = (process.env.APP_URL || 'http://localhost:5001').replace(/\/+$/, '');
+      if (email && tempPassword) {
+        const html = buildEmailTemplate('Bem-vindo ao SwiftFinance', `Olá ${escapeHtml(name || email)},<br><br>A sua subscrição foi ativada com sucesso.`, [
+          { label: 'Email', value: escapeHtml(email) },
+          { label: 'Password temporária', value: escapeHtml(tempPassword) }
+        ], `${appUrl}/login`, 'Entrar no SwiftFinance', name || email);
+        await sendEmail(email, 'Bem-vindo ao SwiftFinance — dados de acesso', html);
+      }
     }
   }
   if (event.type === 'invoice.payment_failed') {
