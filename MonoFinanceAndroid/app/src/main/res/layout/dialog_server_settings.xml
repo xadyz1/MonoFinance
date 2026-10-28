@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:background="@drawable/edit_text_bg"
-        android:hint="Адреса сервера (наприклад, https://monofinance.duckdns.org)"
+        android:hint="Адреса сервера (наприклад, https://finance.swiftapps.cloud)"
         android:textColorHint="@color/text_secondary"
         android:textColor="@color/text_primary"
         android:textSize="14sp"

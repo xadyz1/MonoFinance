@@ -1,11 +1,11 @@
 # SwiftFinance
 
-> **Live Application**: [https://monofinance.duckdns.org](https://monofinance.duckdns.org)
+> **Live Application**: [https://finance.swiftapps.cloud](https://finance.swiftapps.cloud)
 >
 > Privacy-first personal finance tracking platform with AI-powered expense categorization, voice dictation, target savings envelopes, PWA and native Android client.
 
-[![Live](https://img.shields.io/badge/Live-monofinance.duckdns.org-FF5A36?style=flat-square&logo=googlechrome&logoColor=white)](https://monofinance.duckdns.org)
-[![PWA](https://img.shields.io/badge/PWA-iOS_%2F_Android-161B22?style=flat-square&logo=pwa&logoColor=white)](https://monofinance.duckdns.org)
+[![Live](https://img.shields.io/badge/Live-finance.swiftapps.cloud-FF5A36?style=flat-square&logo=googlechrome&logoColor=white)](https://finance.swiftapps.cloud)
+[![PWA](https://img.shields.io/badge/PWA-iOS_%2F_Android-161B22?style=flat-square&logo=pwa&logoColor=white)](https://finance.swiftapps.cloud)
 [![Python](https://img.shields.io/badge/Python-3.10+-161B22?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Groq AI](https://img.shields.io/badge/Groq_AI-LLaMA_3.3_%2F_Whisper-161B22?style=flat-square&logo=openai&logoColor=white)](https://groq.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-161B22?style=flat-square)](LICENSE)
@@ -22,7 +22,7 @@
 
 ## Live Access
 
-- **Official Web Application / PWA**: [https://monofinance.duckdns.org](https://monofinance.duckdns.org) (HTTPS / Let's Encrypt SSL)
+- **Official Web Application / PWA**: [https://finance.swiftapps.cloud](https://finance.swiftapps.cloud) (HTTPS / Let's Encrypt SSL)
 
 ---
 
@@ -166,16 +166,7 @@ SwiftFinance/
 |-- sw.js                            # PWA Service Worker for offline caching and assets
 |-- manifest.json                    # PWA installation manifest for iOS and Android
 |-- monofinance.db                   # SQLite database file (runtime)
-|-- deploy.sh                        # Bash automated deployment script for Oracle Cloud VPS
-|-- enable_monofinance_ssl.sh        # SSL configuration and renewal helper script
-|-- fix_monofinance_duckdns_http.sh  # HTTP fallback and port proxy script
-|-- restore_nginx.sh                 # Nginx configuration restoration utility
-|-- setup_https.sh                   # Automated HTTPS provisioning script
-|-- setup_localtunnel.sh             # LocalTunnel developer tunnel script
-|-- setup_monofinance_duckdns.sh     # DuckDNS dynamic DNS updater configuration
-|-- setup_ngrok.sh                   # Ngrok secure tunnel setup script
-|-- setup_ssl_domain.sh              # Custom domain SSL certificate setup
-|-- start_cloudflare_tunnel.sh       # Cloudflare Tunnel execution script
+|-- deploy.sh                        # Bash automated deployment script for the VPS
 |-- update_server.py                 # Remote migration and database update script
 |-- favicon.svg                      # Vector branding icon
 |-- MonoFinanceAndroid/              # Native Android application source code
@@ -250,7 +241,7 @@ The project includes an automated deployment script (`deploy.sh`) targeting an O
    - Executes database migration checks (`update_server.py`).
    - Reloads the `monofinance.service` systemd daemon.
    - Tests Nginx configuration and reloads the web server.
-   - Validates HTTPS response at `https://monofinance.duckdns.org/`.
+   - Validates HTTPS response at `https://finance.swiftapps.cloud/`.
 
 ---
 

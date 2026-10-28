@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         val btnLogout = dialogView.findViewById<Button>(R.id.dialog_btn_logout)
 
         // Prepopulate fields
-        etUrl.setText(sharedPreferences.getString(KEY_SERVER_URL, "https://monofinance.duckdns.org"))
+        etUrl.setText(sharedPreferences.getString(KEY_SERVER_URL, "https://finance.swiftapps.cloud"))
         etUser.setText(sharedPreferences.getString(KEY_USERNAME, ""))
 
         if (isLoggedIn) {

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">SwiftFinance Mobile</string>
     <string name="title_server_settings">Налаштування сервера</string>
-    <string name="hint_server_url">Адреса сервера (наприклад, https://monofinance.duckdns.org)</string>
+    <string name="hint_server_url">Адреса сервера (наприклад, https://finance.swiftapps.cloud)</string>
     <string name="hint_username">Ім\'я користувача</string>
     <string name="hint_password">Пароль</string>
     <string name="btn_login">Увійти</string>

@@ -2,7 +2,7 @@
 # MonoFinance deployment script to Oracle Cloud VPS
 # Run this script inside WSL
 
-SERVER_IP="${SERVER_IP:-monofinance.duckdns.org}"
+SERVER_IP="${SERVER_IP:-finance.swiftapps.cloud}"
 SSH_KEY="${SSH_KEY:-/home/user/ssh-key-2026-07-11.key}"
 REMOTE_USER="ubuntu"
 REMOTE_DIR="/home/ubuntu/MonoFinance"
@@ -63,7 +63,7 @@ SERVICE_EOF
   sudo tee /etc/nginx/sites-available/monofinance > /dev/null << 'NGINX_EOF'
 server {
     listen 80;
-    server_name monofinance.duckdns.org _;
+    server_name finance.swiftapps.cloud _;
 
     location = /monofinance {
         return 301 /monofinance/;
@@ -90,10 +90,10 @@ server {
 
 server {
     listen 443 ssl;
-    server_name monofinance.duckdns.org;
+    server_name finance.swiftapps.cloud;
 
-    ssl_certificate /etc/letsencrypt/live/monofinance.duckdns.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/monofinance.duckdns.org/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/finance.swiftapps.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/finance.swiftapps.cloud/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:5001/;
@@ -125,4 +125,4 @@ NGINX_EOF
 EOF
 
 echo "=== Deployment Complete ==="
-echo "You can access the dashboard at: https://monofinance.duckdns.org/"
+echo "You can access the dashboard at: https://finance.swiftapps.cloud/"
