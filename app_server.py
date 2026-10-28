@@ -6,6 +6,8 @@ import threading
 import time
 import random
 import tempfile
+import secrets
+import hashlib
 from datetime import datetime, timezone, timedelta
 from flask import Flask, request, jsonify, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -161,7 +163,36 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
     ''')
-    
+
+    # API integrations (external apps pushing revenue/clients/subscriptions)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS integrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            icon TEXT DEFAULT '',
+            token_hash TEXT UNIQUE NOT NULL,
+            token_prefix TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            last_used_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS integration_entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            integration_id INTEGER NOT NULL,
+            entity_type TEXT NOT NULL,
+            external_id TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (integration_id, entity_type, external_id),
+            FOREIGN KEY (integration_id) REFERENCES integrations (id) ON DELETE CASCADE
+        )
+    ''')
+
     # Migration: add role column if missing
     cursor.execute("PRAGMA table_info(users)")
     user_cols = [col['name'] for col in cursor.fetchall()]
@@ -465,6 +496,255 @@ def admin_update_role(target_id):
 
 # Data Sync API
 # Data Sync API
+# ==================== Integrations (external app ingest) ====================
+
+def _now_str():
+    return get_kyiv_now().strftime('%Y-%m-%d %H:%M:%S')
+
+def _hash_token(token):
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+def _is_admin(cursor):
+    cursor.execute("SELECT role FROM users WHERE id = ?", (session.get('user_id'),))
+    row = cursor.fetchone()
+    return bool(row and row['role'] == 'admin')
+
+def _admin_conn_or_403():
+    """Returns (conn, cursor) for admin session, or None (response already decided)."""
+    if 'user_id' not in session:
+        return None
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if not _is_admin(cursor):
+        conn.close()
+        return None
+    return conn, cursor
+
+def _resolve_integration(cursor):
+    auth = request.headers.get('Authorization', '')
+    if not auth.lower().startswith('bearer '):
+        return None
+    token = auth.split(' ', 1)[1].strip()
+    if not token:
+        return None
+    cursor.execute("SELECT id, user_id, name, active FROM integrations WHERE token_hash = ?", (_hash_token(token),))
+    row = cursor.fetchone()
+    if not row or not row['active']:
+        return None
+    return row
+
+ALLOWED_ENTITY_TYPES = {'revenue', 'client', 'subscription'}
+VOID_STATUSES = {'refunded', 'void', 'cancelled', 'canceled', 'failed'}
+
+def _project_revenue_to_income(cursor, user_id, integration_id, integration_name, external_id, fields):
+    """Mirror an ingested revenue entity into the user's income transactions blob."""
+    status = str(fields.get('status') or 'completed').lower()
+    cursor.execute("SELECT transactions FROM user_data WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    txs = []
+    if row and row['transactions']:
+        try:
+            txs = json.loads(row['transactions'])
+        except Exception:
+            txs = []
+    # remove previous projection of this entity (idempotent upsert / void removes)
+    txs = [t for t in txs if not (
+        isinstance(t, dict) and t.get('integrationId') == integration_id and t.get('externalId') == external_id
+    )]
+    if status not in VOID_STATUSES:
+        try:
+            amount = float(fields.get('amount'))
+        except (TypeError, ValueError):
+            amount = None
+        if amount is not None and amount > 0:
+            txs.insert(0, {
+                'id': ('ext-%s-%s' % (integration_id, external_id))[:80],
+                'type': 'income',
+                'amount': amount,
+                'description': str(fields.get('description') or integration_name)[:200],
+                'category': str(fields.get('category') or integration_name)[:80],
+                'date': str(fields.get('date') or _now_str()[:10])[:10],
+                'receipt_url': None,
+                'source': integration_name,
+                'integrationId': integration_id,
+                'externalId': external_id
+            })
+    cursor.execute('''INSERT INTO user_data (user_id, transactions, savings_target, recurring_expenses, savings_goals, daily_expense_limit, weekly_expense_limit, monthly_expense_limit, expense_limit_period)
+        VALUES (?, ?, 10000.0, '[]', '[]', 1000.0, 7000.0, 30000.0, 'day')
+        ON CONFLICT(user_id) DO UPDATE SET transactions = excluded.transactions''',
+        (user_id, json.dumps(txs, ensure_ascii=False)))
+
+@app.route('/api/integrations', methods=['GET'])
+def integrations_list():
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    cursor.execute('''SELECT i.id, i.name, i.icon, i.token_prefix, i.active, i.created_at, i.last_used_at,
+            (SELECT COUNT(*) FROM integration_entities e WHERE e.integration_id = i.id) AS entity_count
+        FROM integrations i WHERE i.user_id = ? ORDER BY i.id DESC''', (session['user_id'],))
+    items = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return jsonify({'integrations': items})
+
+@app.route('/api/integrations', methods=['POST'])
+def integrations_create():
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    data = get_request_data()
+    name = str(data.get('name') or '').strip()[:80]
+    icon = str(data.get('icon') or '').strip()[:200]
+    if not name:
+        conn.close()
+        return jsonify({'message': 'Nome obrigatório'}), 400
+    token = 'sf_' + secrets.token_urlsafe(24)
+    cursor.execute("INSERT INTO integrations (user_id, name, icon, token_hash, token_prefix, active, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)",
+                   (session['user_id'], name, icon, _hash_token(token), token[:12] + '…', _now_str()))
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    # plaintext token returned once — never stored
+    return jsonify({'id': new_id, 'token': token, 'message': 'Integração criada'}), 201
+
+@app.route('/api/integrations/<int:iid>', methods=['PUT'])
+def integrations_update(iid):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    data = get_request_data()
+    sets, params = [], []
+    if 'name' in data:
+        sets.append('name = ?'); params.append(str(data['name']).strip()[:80])
+    if 'icon' in data:
+        sets.append('icon = ?'); params.append(str(data['icon']).strip()[:200])
+    if 'active' in data:
+        sets.append('active = ?'); params.append(1 if data['active'] else 0)
+    if not sets:
+        conn.close()
+        return jsonify({'message': 'Nada para atualizar'}), 400
+    params.extend([iid, session['user_id']])
+    cursor.execute("UPDATE integrations SET %s WHERE id = ? AND user_id = ?" % ', '.join(sets), params)
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Integração atualizada'})
+
+@app.route('/api/integrations/<int:iid>/regenerate', methods=['POST'])
+def integrations_regenerate(iid):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    token = 'sf_' + secrets.token_urlsafe(24)
+    cursor.execute("UPDATE integrations SET token_hash = ?, token_prefix = ? WHERE id = ? AND user_id = ?",
+                   (_hash_token(token), token[:12] + '…', iid, session['user_id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'token': token})
+
+@app.route('/api/integrations/<int:iid>', methods=['DELETE'])
+def integrations_delete(iid):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    cursor.execute("DELETE FROM integration_entities WHERE integration_id = ? AND integration_id IN (SELECT id FROM integrations WHERE user_id = ?)", (iid, session['user_id']))
+    cursor.execute("DELETE FROM integrations WHERE id = ? AND user_id = ?", (iid, session['user_id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Integração eliminada'})
+
+@app.route('/api/integrations/<int:iid>/entities', methods=['GET'])
+def integration_entities_list(iid):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Não autenticado'}), 401
+    res = _admin_conn_or_403()
+    if not res:
+        return jsonify({'message': 'Sem permissão'}), 403
+    conn, cursor = res
+    cursor.execute("SELECT id FROM integrations WHERE id = ? AND user_id = ?", (iid, session['user_id']))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'message': 'Integração não encontrada'}), 404
+    etype = (request.args.get('type') or '').strip()
+    limit = min(int(request.args.get('limit', 200) or 200), 1000)
+    if etype:
+        cursor.execute("SELECT entity_type, external_id, payload, updated_at FROM integration_entities WHERE integration_id = ? AND entity_type = ? ORDER BY updated_at DESC LIMIT ?", (iid, etype, limit))
+    else:
+        cursor.execute("SELECT entity_type, external_id, payload, updated_at FROM integration_entities WHERE integration_id = ? ORDER BY updated_at DESC LIMIT ?", (iid, limit))
+    entities = []
+    for r in cursor.fetchall():
+        try:
+            payload = json.loads(r['payload'])
+        except Exception:
+            payload = {}
+        entities.append({'type': r['entity_type'], 'external_id': r['external_id'], 'data': payload, 'updated_at': r['updated_at']})
+    conn.close()
+    return jsonify({'entities': entities})
+
+@app.route('/api/ingest', methods=['GET'])
+def ingest_ping():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    integ = _resolve_integration(cursor)
+    conn.close()
+    if not integ:
+        return jsonify({'message': 'Token inválido ou inativo'}), 401
+    return jsonify({'ok': True, 'integration': integ['name']})
+
+@app.route('/api/ingest', methods=['POST'])
+def ingest_entities():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    integ = _resolve_integration(cursor)
+    if not integ:
+        conn.close()
+        return jsonify({'message': 'Token inválido ou inativo'}), 401
+    data = get_request_data()
+    entities = data.get('entities')
+    if entities is None:
+        single = data.get('entity')
+        entities = [single] if single else ([data] if data.get('external_id') else [])
+    if not isinstance(entities, list):
+        entities = [entities]
+    now = _now_str()
+    results = []
+    for ent in entities[:500]:
+        if not isinstance(ent, dict):
+            results.append({'status': 'error', 'reason': 'invalid entity'})
+            continue
+        etype = str(ent.get('type') or 'revenue').lower()
+        ext_id = str(ent.get('external_id') or ent.get('id') or '').strip()[:120]
+        if etype not in ALLOWED_ENTITY_TYPES or not ext_id:
+            results.append({'external_id': ext_id or None, 'status': 'error', 'reason': 'missing type/external_id'})
+            continue
+        fields = {k: v for k, v in ent.items() if k not in ('type', 'external_id')}
+        cursor.execute("SELECT id FROM integration_entities WHERE integration_id = ? AND entity_type = ? AND external_id = ?", (integ['id'], etype, ext_id))
+        existed = cursor.fetchone() is not None
+        cursor.execute('''INSERT INTO integration_entities (integration_id, entity_type, external_id, payload, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(integration_id, entity_type, external_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at''',
+            (integ['id'], etype, ext_id, json.dumps(fields, ensure_ascii=False), now, now))
+        if etype == 'revenue':
+            _project_revenue_to_income(cursor, integ['user_id'], integ['id'], integ['name'], ext_id, fields)
+        results.append({'external_id': ext_id, 'type': etype, 'status': 'updated' if existed else 'created'})
+    cursor.execute("UPDATE integrations SET last_used_at = ? WHERE id = ?", (now, integ['id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'results': results})
+
 @app.route('/api/data', methods=['GET'])
 def get_user_data():
     if 'user_id' not in session:

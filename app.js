@@ -729,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initSwipeNavigation = () => {
-        const viewOrder = ['dashboard', 'income', 'expenses', 'statistics'];
+        const viewOrder = ['dashboard', 'income', 'expenses', 'statistics', 'integrations'];
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -823,35 +823,241 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Check auth status
-    function initChatwootWidget(userData) {
-        if (window.$chatwoot) return; // Already initialized
+    // SwiftChat AI assistant widget
+    function initSwiftChatWidget() {
+        if (window.sitechat || document.querySelector('script[data-sitechat-widget]')) return;
 
-        (function(d,t) {
-            var BASE_URL="https://chat.swiftapps.cloud";
-            var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-            g.src=BASE_URL+"/packs/js/sdk.js";
-            g.defer = true;
-            g.async = true;
-            s.parentNode.insertBefore(g,s);
-            g.onload=function(){
-                window.chatwootSDK.run({
-                    websiteToken: 'GjLzCuyvpHas5Ua6ZhDTk2os',
-                    baseUrl: BASE_URL
-                });
-            }
-        })(document,"script");
+        var s = document.createElement('script');
+        s.src = 'https://agent.swiftapps.cloud/widget/chatbot.js';
+        s.async = true;
+        s.dataset.siteId = '376e64a2c42c';
+        s.dataset.apiUrl = 'https://agent.swiftapps.cloud';
+        s.dataset.sitechatWidget = '1';
+        document.head.appendChild(s);
+    }
 
-        window.addEventListener("chatwoot:ready", function () {
-            if (window.$chatwoot && userData && userData.id) {
-                window.$chatwoot.setUser(userData.id, {
-                    email: userData.email || '',
-                    name: userData.name || userData.username || 'Utilizador',
-                    user_id: userData.id
-                });
+    // ==================== Integrations (admin) ====================
+    let integrationsCache = [];
+    const integrationExpanded = new Set();
+    const integrationEntitiesCache = {};
+    const INTEGRATION_TYPE_LABELS = { revenue: 'Rendimentos', client: 'Clientes', subscription: 'Subscrições' };
+
+    function integrationIconHtml(icon) {
+        const val = (icon || '').trim();
+        if (/^(https?:|data:|\/)/i.test(val)) {
+            return `<img src="${escapeHtml(val)}" alt="" class="w-full h-full object-cover">`;
+        }
+        return `<span class="text-lg leading-none">${escapeHtml(val || '🔗')}</span>`;
+    }
+
+    async function loadIntegrations() {
+        const list = document.getElementById('integrations-list');
+        if (!list) return;
+        try {
+            const res = await fetch(getApiUrl('api/integrations'), { credentials: 'same-origin' });
+            if (!res.ok) {
+                list.innerHTML = '<p class="text-xs text-brand-textSecondary py-4 text-center">Não foi possível carregar as integrações.</p>';
+                return;
             }
+            const data = await res.json();
+            integrationsCache = data.integrations || [];
+            renderIntegrations();
+        } catch (e) {
+            list.innerHTML = '<p class="text-xs text-brand-textSecondary py-4 text-center">Erro ao carregar integrações.</p>';
+        }
+    }
+
+    function renderIntegrations() {
+        const list = document.getElementById('integrations-list');
+        if (!list) return;
+        if (!integrationsCache.length) {
+            list.innerHTML = '<p class="text-xs text-brand-textSecondary py-6 text-center">Ainda não há integrações. Crie a primeira acima para gerar um token de API.</p>';
+            return;
+        }
+        list.innerHTML = integrationsCache.map(it => `
+            <div class="bg-[#111113] border border-[#202024] rounded-3xl p-5" data-integration-id="${it.id}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-[#161619] border border-[#202024] flex items-center justify-center overflow-hidden flex-shrink-0">${integrationIconHtml(it.icon)}</div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-white truncate">${escapeHtml(it.name)}</p>
+                            <p class="text-[10px] text-brand-textSecondary truncate">${escapeHtml(it.token_prefix || '')} · ${it.entity_count} registos · criada ${escapeHtml((it.created_at || '').slice(0, 10))}${it.last_used_at ? ' · último envio ' + escapeHtml(it.last_used_at.slice(0, 16)) : ''}</p>
+                        </div>
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg ${it.active ? 'bg-[#20a034]/15 text-[#20a034]' : 'bg-[#202024] text-brand-textSecondary'}">${it.active ? 'Ativa' : 'Inativa'}</span>
+                </div>
+                <div class="flex gap-2 mt-4 flex-wrap">
+                    <button type="button" data-act="data" class="px-4 py-2 bg-[#161619] border border-[#202024] text-white hover:bg-[#202024] rounded-xl text-[11px] font-semibold transition-all">${integrationExpanded.has(it.id) ? 'Ocultar dados' : 'Ver dados'}</button>
+                    <button type="button" data-act="regen" class="px-4 py-2 bg-[#161619] border border-[#202024] text-white hover:bg-[#202024] rounded-xl text-[11px] font-semibold transition-all">Regenerar token</button>
+                    <button type="button" data-act="toggle" class="px-4 py-2 bg-[#161619] border border-[#202024] text-white hover:bg-[#202024] rounded-xl text-[11px] font-semibold transition-all">${it.active ? 'Desativar' : 'Ativar'}</button>
+                    <button type="button" data-act="delete" class="px-4 py-2 bg-[#161619] border border-[#3a1d1d] text-red-400 hover:bg-[#3a1d1d] rounded-xl text-[11px] font-semibold transition-all">Eliminar</button>
+                </div>
+                <div class="integration-entities ${integrationExpanded.has(it.id) ? '' : 'hidden'} mt-4 pt-4 border-t border-[#202024]" data-entities="${it.id}"></div>
+            </div>
+        `).join('');
+        integrationExpanded.forEach(iid => {
+            const container = list.querySelector(`[data-entities="${iid}"]`);
+            if (container) renderEntitiesFor(iid, container);
         });
     }
+
+    function renderEntitiesFor(iid, container) {
+        const entities = integrationEntitiesCache[iid];
+        if (!entities) {
+            container.innerHTML = '<p class="text-xs text-brand-textSecondary py-3 text-center">A carregar…</p>';
+            return;
+        }
+        if (!entities.length) {
+            container.innerHTML = '<p class="text-xs text-brand-textSecondary py-3 text-center">Sem dados recebidos ainda.</p>';
+            return;
+        }
+        const groups = {};
+        entities.forEach(e => { (groups[e.type] = groups[e.type] || []).push(e); });
+        let html = '';
+        for (const [type, items] of Object.entries(groups)) {
+            html += `<p class="text-[10px] uppercase tracking-wider text-brand-textSecondary mt-3 mb-1">${INTEGRATION_TYPE_LABELS[type] || escapeHtml(type)} (${items.length})</p>`;
+            items.slice(0, 50).forEach(e => {
+                const d = e.data || {};
+                let main = '', sub = '';
+                if (e.type === 'client') {
+                    main = d.name || d.email || e.external_id;
+                    sub = [d.email, d.phone].filter(Boolean).join(' · ');
+                } else if (e.type === 'subscription') {
+                    main = d.plan || d.customer_email || e.external_id;
+                    sub = [d.customer_email, d.amount != null ? d.amount + '€/' + (d.interval || 'mês') : '', d.status].filter(Boolean).join(' · ');
+                } else {
+                    main = d.description || e.external_id;
+                    sub = [d.date, d.amount != null ? d.amount + '€' : '', d.status, d.customer_email].filter(Boolean).join(' · ');
+                }
+                html += `<div class="flex justify-between gap-3 py-2 border-b border-[#202024]/60 last:border-0"><span class="text-xs text-white truncate">${escapeHtml(String(main))}</span><span class="text-[10px] text-brand-textSecondary truncate">${escapeHtml(String(sub))}</span></div>`;
+            });
+        }
+        container.innerHTML = html;
+    }
+
+    async function loadIntegrationEntities(iid) {
+        try {
+            const res = await fetch(getApiUrl('api/integrations/' + iid + '/entities'), { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const data = await res.json();
+            integrationEntitiesCache[iid] = data.entities || [];
+        } catch (e) { /* keep empty */ }
+    }
+
+    function showIntegrationToken(token) {
+        const card = document.getElementById('integration-token-card');
+        const value = document.getElementById('integration-token-value');
+        if (!card || !value) return;
+        value.textContent = token;
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function bindIntegrationEvents() {
+        const createBtn = document.getElementById('integration-create-btn');
+        createBtn?.addEventListener('click', async () => {
+            const nameEl = document.getElementById('integration-name');
+            const iconEl = document.getElementById('integration-icon');
+            const name = (nameEl?.value || '').trim();
+            if (!name) { showToast('Indique o nome da app', 'error'); return; }
+            createBtn.disabled = true;
+            try {
+                const res = await fetch(getApiUrl('api/integrations'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ name, icon: (iconEl?.value || '').trim() })
+                });
+                const data = await res.json();
+                if (!res.ok) { showToast(data.message || 'Erro ao criar integração', 'error'); return; }
+                if (nameEl) nameEl.value = '';
+                showIntegrationToken(data.token);
+                showToast('Integração criada', 'success');
+                await loadIntegrations();
+            } catch (e) {
+                showToast('Erro ao criar integração', 'error');
+            } finally {
+                createBtn.disabled = false;
+            }
+        });
+
+        const copyBtn = document.getElementById('integration-token-copy');
+        copyBtn?.addEventListener('click', async () => {
+            const token = document.getElementById('integration-token-value')?.textContent || '';
+            try {
+                await navigator.clipboard.writeText(token);
+                showToast('Token copiado', 'success');
+            } catch (e) {
+                showToast('Não foi possível copiar', 'error');
+            }
+        });
+
+        const list = document.getElementById('integrations-list');
+        list?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn) return;
+            const card = btn.closest('[data-integration-id]');
+            const iid = parseInt(card?.dataset.integrationId);
+            const it = integrationsCache.find(x => x.id === iid);
+            if (!iid || !it) return;
+            const act = btn.dataset.act;
+
+            if (act === 'data') {
+                if (integrationExpanded.has(iid)) {
+                    integrationExpanded.delete(iid);
+                } else {
+                    integrationExpanded.add(iid);
+                    await loadIntegrationEntities(iid);
+                }
+                renderIntegrations();
+            } else if (act === 'regen') {
+                if (!confirm(`Regenerar o token de "${it.name}"? O token atual deixa de funcionar.`)) return;
+                const res = await fetch(getApiUrl('api/integrations/' + iid + '/regenerate'), { method: 'POST', credentials: 'same-origin' });
+                const data = await res.json();
+                if (!res.ok) { showToast(data.message || 'Erro', 'error'); return; }
+                showIntegrationToken(data.token);
+                showToast('Novo token gerado', 'success');
+                await loadIntegrations();
+            } else if (act === 'toggle') {
+                const res = await fetch(getApiUrl('api/integrations/' + iid), {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ active: !it.active })
+                });
+                if (!res.ok) { showToast('Erro ao atualizar', 'error'); return; }
+                await loadIntegrations();
+            } else if (act === 'delete') {
+                if (!confirm(`Eliminar a integração "${it.name}" e todos os dados recebidos?`)) return;
+                const res = await fetch(getApiUrl('api/integrations/' + iid), { method: 'DELETE', credentials: 'same-origin' });
+                if (!res.ok) { showToast('Erro ao eliminar', 'error'); return; }
+                integrationExpanded.delete(iid);
+                delete integrationEntitiesCache[iid];
+                showToast('Integração eliminada', 'success');
+                await loadIntegrations();
+            }
+        });
+
+        const apiExample = document.getElementById('integration-api-example');
+        if (apiExample) {
+            apiExample.textContent = [
+                'curl -X POST ' + location.origin + '/api/ingest \\',
+                '  -H "Authorization: Bearer <token>" \\',
+                '  -H "Content-Type: application/json" \\',
+                '  -d \'{',
+                '    "type": "revenue",',
+                '    "external_id": "inv_1001",',
+                '    "amount": 29.00,',
+                '    "date": "2026-10-28",',
+                '    "description": "Subscrição Pro",',
+                '    "customer_email": "cliente@exemplo.com"',
+                '  }\''
+            ].join('\n');
+        }
+    }
+
+    bindIntegrationEvents();
+
 
     async function checkAuth() {
         try {
@@ -865,8 +1071,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateWelcomeSection();
                 isDemoMode = false;
 
-                // Chatwoot Auth Integration
-                initChatwootWidget(data);
+                // SwiftChat assistant widget (must never block auth flow)
+                try { initSwiftChatWidget(); } catch (e) { console.warn('Chat widget init failed', e); }
 
                 // Smooth UI transition
                 showAppScreenSmoothly();
@@ -891,6 +1097,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (adminBtn) adminBtn.classList.remove('hidden');
                     const sidePanelAdmin = document.getElementById('side-panel-admin');
                     if (sidePanelAdmin) sidePanelAdmin.classList.remove('hidden');
+                    const navIntegrations = document.getElementById('nav-integrations');
+                    if (navIntegrations) navIntegrations.classList.remove('hidden');
+                    const sidePanelIntegrations = document.getElementById('side-panel-integrations');
+                    if (sidePanelIntegrations) sidePanelIntegrations.classList.remove('hidden');
+                    loadIntegrations();
                 }
 
                 // Update side panel profile info if elements exist
@@ -1216,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetView === 'savings') {
             targetView = 'dashboard';
         }
-        const viewOrder = ['dashboard', 'income', 'expenses', 'statistics'];
+        const viewOrder = ['dashboard', 'income', 'expenses', 'statistics', 'integrations'];
         const activeView = document.querySelector('.dashboard-view.active');
         let currentViewId = activeView ? activeView.id.replace('view-', '') : 'dashboard';
 

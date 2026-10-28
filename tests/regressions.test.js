@@ -174,7 +174,7 @@ test('HTML labels and cache versions are consistent; API data is never cached', 
   const html = read('app.html');
   const sw = read('sw.js');
   assert.doesNotMatch(html, /[\u0400-\u04ff]/);
-  for (const asset of ['app.js?v=137', 'styles.css?v=115', 'receipt-preview.js?v=1', 'dashboard.js?v=3']) {
+  for (const asset of ['app.js?v=138', 'styles.css?v=115', 'receipt-preview.js?v=1', 'dashboard.js?v=3']) {
     assert.ok(html.includes(asset));
     assert.ok(sw.includes(asset));
   }

@@ -125,6 +125,10 @@
                         <span class="material-symbols-outlined text-[22px]">monitoring</span>
                         <span class="font-medium">Estatísticas</span>
                     </button>
+                    <button class="nav-item hidden" id="nav-integrations" data-view="integrations">
+                        <span class="material-symbols-outlined text-[22px]">hub</span>
+                        <span class="font-medium">Integrações</span>
+                    </button>
                     <button
                         class="hidden w-full py-3 bg-[#20a034] hover:bg-[#20a034]/90 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#20a034]/20 mt-4"
                         id="sidebar-voice-btn" title="Entrada por voz">
@@ -205,6 +209,10 @@
                         <button class="mobile-side-item" data-view="statistics">
                             <span class="material-symbols-outlined text-[20px]">monitoring</span>
                             <span class="font-medium">Estatísticas</span>
+                        </button>
+                        <button class="mobile-side-item hidden" id="side-panel-integrations" data-view="integrations">
+                            <span class="material-symbols-outlined text-[20px]">hub</span>
+                            <span class="font-medium">Integrações</span>
                         </button>
 
                         <div class="my-4 h-px bg-[#202024]"></div>
@@ -1274,6 +1282,54 @@
                     </div>
                 </div>
 
+                <!-- VIEW: Integrations (admin only) -->
+                <div class="dashboard-view" id="view-integrations">
+                    <div class="flex flex-col gap-6 p-1 sm:p-2">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Integrações</h2>
+                            <p class="text-xs text-brand-textSecondary mt-1">Ligue as suas apps — envie rendimentos, clientes e subscrições para um só lugar.</p>
+                        </div>
+
+                        <!-- New integration -->
+                        <div class="bg-[#111113] border border-[#202024] rounded-3xl p-5 sm:p-6">
+                            <h3 class="text-sm font-semibold text-white mb-1">Nova integração</h3>
+                            <p class="text-[11px] text-brand-textSecondary mb-4">Cada integração gera um token de API para enviar dados.</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input id="integration-name" type="text" maxlength="80" placeholder="Nome da app (ex: SiteChat)"
+                                    class="flex-1 bg-black border border-[#202024] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all">
+                                <input id="integration-icon" type="text" maxlength="200" placeholder="Ícone (emoji ou URL de imagem)"
+                                    class="sm:w-56 bg-black border border-[#202024] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all">
+                                <button id="integration-create-btn" type="button"
+                                    class="px-6 py-3 bg-[#20a034] hover:bg-[#20a034]/90 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-[#20a034]/20 whitespace-nowrap">Criar token</button>
+                            </div>
+                        </div>
+
+                        <!-- Token reveal (shown once) -->
+                        <div id="integration-token-card" class="hidden bg-[#111113] border border-[#20a034]/40 rounded-3xl p-5 sm:p-6">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="material-symbols-outlined text-[18px] text-[#20a034]">key</span>
+                                <h3 class="text-sm font-semibold text-white">Token gerado — copie agora</h3>
+                            </div>
+                            <p class="text-[11px] text-brand-textSecondary mb-3">Este token só é mostrado uma vez. Guarde-o em segurança.</p>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <code id="integration-token-value" class="flex-1 bg-black border border-[#202024] rounded-xl px-4 py-3 text-[#20a034] text-xs font-mono break-all"></code>
+                                <button id="integration-token-copy" type="button"
+                                    class="px-5 py-3 bg-[#161619] border border-[#202024] text-white hover:bg-[#202024] rounded-xl text-xs font-semibold transition-all whitespace-nowrap">Copiar</button>
+                            </div>
+                        </div>
+
+                        <!-- Integrations list -->
+                        <div id="integrations-list" class="flex flex-col gap-4"></div>
+
+                        <!-- API docs -->
+                        <div class="bg-[#111113] border border-[#202024] rounded-3xl p-5 sm:p-6">
+                            <h3 class="text-sm font-semibold text-white mb-2">Como enviar dados</h3>
+                            <p class="text-[11px] text-brand-textSecondary mb-3">Envie entidades via POST com o token no cabeçalho <code class="text-white">Authorization: Bearer &lt;token&gt;</code>. Tipos: <code class="text-white">revenue</code>, <code class="text-white">client</code>, <code class="text-white">subscription</code>. Rendimentos aparecem automaticamente em Rendimentos e Estatísticas.</p>
+                            <pre id="integration-api-example" class="bg-black border border-[#202024] rounded-xl p-4 text-[11px] text-brand-textSecondary font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -2233,7 +2289,7 @@
                 class="text-sm text-brand-accent hover:underline">Abrir ficheiro noutra janela</a>
         </div>
     </div>
-    <script src="app.js?v=137" defer></script>
+    <script src="app.js?v=138" defer></script>
     <script src="receipt-preview.js?v=1" defer></script>
     <script src="dashboard.js?v=3" defer></script>
     <!-- Stripe Checkout Modal -->
